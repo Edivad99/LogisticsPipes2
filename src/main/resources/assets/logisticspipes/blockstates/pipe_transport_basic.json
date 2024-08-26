@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "logisticspipes:block/pipe_transport_basic"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/Edivad99/LogisticsPipes2/issues"
+
+[[mods]]
+modId = "logisticspipes"
+version = "${mod_version}"
+displayName = "Logistic Pipes"
+#updateJSONURL = "https://api.modrinth.com/updates/railcraft-reborn/forge_updates.json?neoforge=include"
+logoFile = "pack.png"
+credits = ""
+#modUrl = "https://www.curseforge.com/minecraft/mc-mods/railcraft-reborn"
+authors = "Edivad99"
+
+[[dependencies.logisticspipes]]
+  type = "required"
+  modId = "neoforge"
+  ordering = "AFTER"
+  side = "BOTH"
+  versionRange = "${neo_version_range}"
+[[dependencies.logisticspipes]]
+  type = "required"
+  modId = "minecraft"
+  ordering = "NONE"
+  side = "BOTH"
+  versionRange = "${minecraft_version_range}"

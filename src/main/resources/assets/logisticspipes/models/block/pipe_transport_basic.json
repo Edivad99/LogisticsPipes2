@@ -1,0 +1,5 @@
+{
+  "flip_v": true,
+  "loader": "logisticspipes:obj",
+  "model": "logisticspipes:models/block/pipe_transport_basic.obj"
+}

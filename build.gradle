@@ -1,0 +1,176 @@
+import java.util.regex.Matcher
+import static org.apache.commons.lang3.StringUtils.repeat
+
+plugins {
+  id 'java-library'
+  id 'eclipse'
+  id 'idea'
+  id 'net.neoforged.gradle.userdev' version "$neo_gradle_version"
+  id 'com.diffplug.spotless' version '6.25.0'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+  distributionType = Wrapper.DistributionType.BIN
+}
+
+version = "$minecraft_version-$mod_version"
+
+group = 'logisticspipes'
+base {
+    archivesName = 'logisticspipes'
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+    if (System.getProperty('idea.active')) {
+        vendor = JvmVendorSpec.JETBRAINS
+    }
+  }
+}
+
+println(repeat('*', 60))
+println("Project Version: $version")
+println("Java: ${System.getProperty('java.version')}")
+println("JVM: ${System.getProperty('java.vm.version')} (${System.getProperty('java.vendor')})")
+println("Arch: ${System.getProperty('os.arch')}")
+println(repeat('*', 60))
+
+sourceSets {
+  main {
+    resources {
+      srcDir 'src/generated/resources'
+      exclude '.cache'
+    }
+  }
+}
+
+runs {
+  configureEach {
+    systemProperty 'forge.logging.console.level', 'debug'
+
+    modSource project.sourceSets.main
+
+    if (System.getProperty('idea.active')) {
+      jvmArguments.add("-XX:+AllowEnhancedClassRedefinition")
+    }
+  }
+
+  server {
+    arguments '--nogui'
+  }
+
+  data {
+    arguments.addAll '--mod', 'logisticspipes', '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+  }
+}
+
+repositories {
+  maven {
+    name 'JEI/Patchouli'
+    url 'https://maven.blamejared.com/'
+  }
+  maven {
+    name 'curseforge'
+    url 'https://www.cursemaven.com'
+  }
+}
+
+configurations {
+  runtimeClasspath.extendsFrom localRuntime
+}
+
+dependencies {
+  implementation group: 'net.neoforged', name: 'neoforge', version: neo_version
+
+  compileOnly "mezz.jei:jei-$minecraft_version-common-api:$jei_version"
+  compileOnly "mezz.jei:jei-$minecraft_version-neoforge-api:$jei_version"
+  localRuntime "mezz.jei:jei-$minecraft_version-neoforge:$jei_version"
+}
+
+spotless {
+  java {
+    target 'src/*/java/**/*.java'
+    importOrder('\\#', 'java|javax|org|com|')
+
+    endWithNewline()
+    trimTrailingWhitespace()
+    removeUnusedImports()
+    indentWithSpaces(2)
+    custom 'noWildcardImports', { String fileContents ->
+      if (fileContents.contains('*;\n')) {
+        throw new GradleException('No wildcard imports are allowed!')
+      }
+    }
+    bumpThisNumberIfACustomStepChanges(1)
+  }
+}
+
+tasks.register('generatePackageInfos', Task) {
+  doLast {
+    fileTree('src/main/java').each { javaFile ->
+      def packageInfoFile = new File(javaFile.parent, 'package-info.java')
+      if (!packageInfoFile.exists()) {
+        def pkgName = javaFile.toString().replaceAll(Matcher.quoteReplacement(File.separator), '/')
+        pkgName = pkgName.substring(pkgName.indexOf('logisticspipes/'), pkgName.lastIndexOf('/'))
+        pkgName = pkgName.replaceAll('/', '.')
+
+        def pkgInfoText = """
+            |@FieldsAreNonnullByDefault
+            |@MethodsReturnNonnullByDefault
+            |@ParametersAreNonnullByDefault
+            |package $pkgName;
+            |
+            |import javax.annotation.ParametersAreNonnullByDefault;
+            |import net.minecraft.FieldsAreNonnullByDefault;
+            |import net.minecraft.MethodsReturnNonnullByDefault;
+        """.stripMargin().trim()
+
+        packageInfoFile.text = pkgInfoText
+      }
+    }
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.compilerArgs.addAll(['-Xmaxerrs', '100000'])
+}
+
+idea {
+  module {
+    downloadSources = true
+    downloadJavadoc = true
+  }
+}
+
+tasks.withType(ProcessResources).configureEach {
+  var replaceProperties = [
+    minecraft_version       : minecraft_version,
+    minecraft_version_range : minecraft_version_range,
+    neo_version             : neo_version,
+    neo_version_range       : neo_version_range,
+    loader_version_range    : loader_version_range,
+    mod_license             : mod_license,
+    mod_version             : mod_version,
+  ]
+  inputs.properties replaceProperties
+
+  filesMatching(['META-INF/neoforge.mods.toml']) {
+    expand replaceProperties
+  }
+}
+
+tasks.named('jar', Jar).configure {
+  from([sourceSets.api.output, sourceSets.main.output])
+  manifest {
+    attributes([
+      'Specification-Title'       : project.name,
+      'Specification-Vendor'      : 'Edivad99',
+      'Specification-Version'     : '1',
+      'Implementation-Title'      : project.name,
+      'Implementation-Version'    : project.version,
+      'Implementation-Vendor'     : 'Edivad99',
+      'Implementation-Commit'     : 'git rev-parse HEAD'.execute().text.trim(),
+    ])
+  }
+}
