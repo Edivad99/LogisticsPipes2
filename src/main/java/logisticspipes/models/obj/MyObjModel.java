@@ -184,13 +184,13 @@ public class MyObjModel extends SimpleUnbakedGeometry<MyObjModel> {
         }
 
         case "v": // Vertex
-          model.positions.add(parseVector4To3(line).mul(0.01f));
+          model.positions.add(parseVector4To3(line));
           break;
         case "vt": // Vertex texcoord
           model.texCoords.add(parseVector2(line));
           break;
         case "vn": // Vertex normal
-          model.normals.add(parseVector3(line).mul(0.01f));
+          model.normals.add(parseVector3(line));
           break;
         case "vc": // Vertex color (non-standard)
           model.colors.add(parseVector4(line));
