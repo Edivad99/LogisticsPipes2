@@ -1,7 +1,7 @@
 package logisticspipes.client;
 
 import logisticspipes.client.renderer.blockentity.LogisticsPipesEntityRenderers;
-import logisticspipes.models.obj.MyGeometryLoader;
+import logisticspipes.models.obj.MyObjLoader;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
@@ -14,7 +14,7 @@ public class ClientManager {
   }
 
   public static void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-    event.register(MyGeometryLoader.ID, MyGeometryLoader.INSTANCE);
+    event.register(MyObjLoader.ID, MyObjLoader.INSTANCE);
   }
 
   private static void handleRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -8,6 +8,7 @@ import logisticspipes.LogisticsPipes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
@@ -16,6 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.IDynamicBakedModel;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
@@ -50,7 +52,7 @@ public class MyDynamicModel implements IDynamicBakedModel {
 
   @Override
   public boolean usesBlockLight() {
-    return usesBlockLight;
+    return this.usesBlockLight;
   }
 
   @Override
@@ -67,7 +69,12 @@ public class MyDynamicModel implements IDynamicBakedModel {
   // Override this to true if you want to use a custom block entity renderer instead of the default renderer.
   @Override
   public boolean isCustomRenderer() {
-    return true;
+    return false;
+  }
+
+  @Override
+  public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
+    return ChunkRenderTypeSet.of(RenderType.CUTOUT);
   }
 
   // This is where the magic happens. Return a list of the quads to render here. Parameters are:
@@ -81,8 +88,10 @@ public class MyDynamicModel implements IDynamicBakedModel {
   @Override
   public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData extraData, @Nullable RenderType renderType) {
     List<BakedQuad> quads = new ArrayList<>();
+    if (side == null && (renderType == null || renderType.equals(RenderType.cutout()))) {
+      quads.addAll(base.getQuads(state, side, rand, extraData, renderType));
+    }
     // Add the base model's quads. Can also do something different with the quads here, depending on what you need.
-    quads.addAll(base.getQuads(state, side, rand, extraData, renderType));
     // add other elements to the quads list as needed here
     return quads;
   }
@@ -91,5 +100,10 @@ public class MyDynamicModel implements IDynamicBakedModel {
   public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
       boolean applyLeftHandTransform) {
     return base.applyTransform(transformType, poseStack, applyLeftHandTransform);
+  }
+
+  @Override
+  public ItemTransforms getTransforms() {
+    return base.getTransforms();
   }
 }
