@@ -24,5 +24,6 @@ public class LogisticsPipesCreativeModTabs {
           .title(Component.literal("Logistic Pipes"))
           .displayItems((parameters, output) -> {
             output.accept(LogisticsPipesItems.PIPE_TRANSPORT_BASIC.get());
+            output.accept(LogisticsPipesItems.STONE.get());
           }).build());
 }

@@ -1,5 +1,5 @@
 mtllib pipe_transport_basic.mtl
-usemtl Material
+usemtl defaultMaterial
 g Mesh332 Side_Texture_Plate_Side3 Texture_Side_N
 v 0.312500 0.750000 -0.812500
 v 0.312500 0.812500 -0.812500

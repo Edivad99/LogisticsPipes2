@@ -18,12 +18,12 @@ import net.neoforged.neoforge.client.model.obj.ObjMaterialLibrary;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
 import net.neoforged.neoforge.client.model.obj.ObjTokenizer;
 
-public class MyObjLoader implements IGeometryLoader<MyObjModel>, ResourceManagerReloadListener {
+public class MyObjLoader implements IGeometryLoader<LogisticsNewPipeModel>, ResourceManagerReloadListener {
 
   public static final MyObjLoader INSTANCE = new MyObjLoader();
   public static final ResourceLocation ID = LogisticsPipes.rl("obj");
 
-  private final Map<ObjModel.ModelSettings, MyObjModel> modelCache = Maps.newConcurrentMap();
+  private final Map<ObjModel.ModelSettings, LogisticsNewPipeModel> modelCache = Maps.newConcurrentMap();
   private final Map<ResourceLocation, ObjMaterialLibrary> materialCache = Maps.newConcurrentMap();
 
   private final ResourceManager manager = Minecraft.getInstance().getResourceManager();
@@ -38,7 +38,7 @@ public class MyObjLoader implements IGeometryLoader<MyObjModel>, ResourceManager
   }
 
   @Override
-  public MyObjModel read(JsonObject jsonObject, JsonDeserializationContext deserializationContext)
+  public LogisticsNewPipeModel read(JsonObject jsonObject, JsonDeserializationContext deserializationContext)
       throws JsonParseException {
     if (!jsonObject.has("model"))
       throw new JsonParseException("OBJ Loader requires a 'model' key that points to a valid .OBJ model.");
@@ -51,14 +51,17 @@ public class MyObjLoader implements IGeometryLoader<MyObjModel>, ResourceManager
     boolean emissiveAmbient = GsonHelper.getAsBoolean(jsonObject, "emissive_ambient", true);
     String mtlOverride = GsonHelper.getAsString(jsonObject, "mtl_override", null);
 
-    return loadModel(new ObjModel.ModelSettings(ResourceLocation.parse(modelLocation), automaticCulling, shadeQuads, flipV, emissiveAmbient, mtlOverride));
+    ObjModel.ModelSettings settings = new ObjModel.ModelSettings(ResourceLocation.parse(modelLocation),
+        automaticCulling, shadeQuads, flipV, emissiveAmbient, mtlOverride);
+    LogisticsNewPipeModel model = loadModel(settings);
+    return model;
   }
 
-  public MyObjModel loadModel(ObjModel.ModelSettings settings) {
+  public LogisticsNewPipeModel loadModel(ObjModel.ModelSettings settings) {
     return modelCache.computeIfAbsent(settings, (data) -> {
       Resource resource = manager.getResource(settings.modelLocation()).orElseThrow();
       try (ObjTokenizer tokenizer = new ObjTokenizer(resource.open())) {
-        return MyObjModel.parse(tokenizer, settings);
+        return LogisticsNewPipeModel.parse(tokenizer, settings);
       } catch (FileNotFoundException e) {
         throw new RuntimeException("Could not find OBJ model", e);
       } catch (Exception e) {

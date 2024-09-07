@@ -1,6 +1,8 @@
 package logisticspipes.world.item;
 
+import java.util.Locale;
 import logisticspipes.LogisticsPipes;
+import logisticspipes.world.level.block.LogisticsPipesBlocks;
 import net.minecraft.world.item.BlockItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -18,4 +20,7 @@ public class LogisticsPipesItems {
   public static final DeferredItem<PipeTransportBasicItem> PIPE_TRANSPORT_BASIC =
       deferredRegister.register("pipe_transport_basic",
           () -> new PipeTransportBasicItem(new BlockItem.Properties()));
+
+  public static final DeferredItem<BlockItem> STONE =
+      deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.STONE);
 }

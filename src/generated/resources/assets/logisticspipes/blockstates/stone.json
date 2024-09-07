@@ -1,0 +1,62 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "logisticspipes:block/center"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end"
+      },
+      "when": {
+        "connection_2": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end",
+        "y": 180
+      },
+      "when": {
+        "connection_3": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end",
+        "y": 90
+      },
+      "when": {
+        "connection_5": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end",
+        "y": 270
+      },
+      "when": {
+        "connection_4": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end",
+        "x": 90
+      },
+      "when": {
+        "connection_0": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/end",
+        "x": 270
+      },
+      "when": {
+        "connection_1": "true"
+      }
+    }
+  ]
+}
