@@ -10,7 +10,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 public class LogisticsPipesEntityRenderers {
 
   public static void register(EntityRenderersEvent.RegisterRenderers event) {
-    event.registerBlockEntityRenderer(LogisticsPipesBlockEntityTypes.PIPE_TRANSPORT_BASIC.get(),
+    event.registerBlockEntityRenderer(LogisticsPipesBlockEntityTypes.PIPE_BASIC.get(),
         supply(LogisticsRenderPipe::new));
   }
 

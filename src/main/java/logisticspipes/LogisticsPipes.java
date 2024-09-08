@@ -1,7 +1,7 @@
 package logisticspipes;
 
 import logisticspipes.client.ClientManager;
-import logisticspipes.datagen.CustomBlockStateProvider;
+import logisticspipes.datagen.LogisticsPipesBlockStateProvider;
 import logisticspipes.world.item.LogisticsPipesCreativeModTabs;
 import logisticspipes.world.item.LogisticsPipesItems;
 import logisticspipes.world.level.block.LogisticsPipesBlocks;
@@ -38,7 +38,7 @@ public class LogisticsPipes {
     var lookupProvider = event.getLookupProvider();
     var fileHelper = event.getExistingFileHelper();
 
-    generator.addProvider(event.includeClient(), new CustomBlockStateProvider(packOutput, fileHelper));
+    generator.addProvider(event.includeClient(), new LogisticsPipesBlockStateProvider(packOutput, fileHelper));
   }
 
 

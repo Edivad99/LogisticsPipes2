@@ -21,9 +21,8 @@ public class LogisticsPipesCreativeModTabs {
   public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB =
       deferredRegister.register("main_tab", () -> CreativeModeTab.builder()
           .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
-          .title(Component.literal("Logistic Pipes"))
+          .title(Component.literal("Logistics Pipes"))
           .displayItems((parameters, output) -> {
-            output.accept(LogisticsPipesItems.PIPE_TRANSPORT_BASIC.get());
-            output.accept(LogisticsPipesItems.STONE.get());
+            output.accept(LogisticsPipesItems.PIPE_BASIC.get());
           }).build());
 }

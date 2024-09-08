@@ -6,7 +6,6 @@ import net.minecraft.world.item.BlockItem;
 public class PipeTransportBasicItem extends BlockItem {
 
   public PipeTransportBasicItem(Properties properties) {
-    super(LogisticsPipesBlocks.PIPE_TRANSPORT_BASIC.get(), properties);
+    super(LogisticsPipesBlocks.PIPE_BASIC.get(), properties);
   }
-
 }

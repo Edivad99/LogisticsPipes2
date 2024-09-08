@@ -16,10 +16,6 @@ public class LogisticsPipesItems {
     deferredRegister.register(modEventBus);
   }
 
-  public static final DeferredItem<PipeTransportBasicItem> PIPE_TRANSPORT_BASIC =
-      deferredRegister.register("pipe_transport_basic",
-          () -> new PipeTransportBasicItem(new BlockItem.Properties()));
-
-  public static final DeferredItem<BlockItem> STONE =
-      deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.STONE);
+  public static final DeferredItem<BlockItem> PIPE_BASIC =
+      deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.PIPE_BASIC);
 }

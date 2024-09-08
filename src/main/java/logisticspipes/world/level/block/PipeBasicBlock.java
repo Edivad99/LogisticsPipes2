@@ -4,13 +4,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.Nullable;
+import com.mojang.serialization.MapCodec;
+import logisticspipes.world.level.block.entity.LogisticsTileGenericPipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -18,12 +24,13 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class StoneBlock extends Block {
+public class PipeBasicBlock extends BaseEntityBlock {
 
   public static final Map<Direction, BooleanProperty> CONNECTION =
       Arrays.stream(Direction.values())
           .collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.getName())));
 
+  private static final MapCodec<PipeBasicBlock> CODEC = simpleCodec(PipeBasicBlock::new);
   private static final VoxelShape CENTER = box(4, 4, 4, 12, 12, 12);
   private static final Map<Direction, VoxelShape> END = new HashMap<>() {
     {
@@ -36,13 +43,18 @@ public class StoneBlock extends Block {
     }
   };
 
-  public StoneBlock(Properties properties) {
+  public PipeBasicBlock(Properties properties) {
     super(properties);
     BlockState state = this.stateDefinition.any();
     for (var property : CONNECTION.values()) {
       state = state.setValue(property, false);
     }
     this.registerDefaultState(state);
+  }
+
+  @Override
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -106,6 +118,16 @@ public class StoneBlock extends Block {
   }
 
   private boolean checkBlock(LevelAccessor world, BlockPos pos, Block block, Direction direction) {
-    return block instanceof StoneBlock;
+    return block instanceof PipeBasicBlock;
+  }
+
+  @Override
+  public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    return new LogisticsTileGenericPipe(pos, state);
+  }
+
+  @Override
+  protected RenderShape getRenderShape(BlockState state) {
+    return RenderShape.MODEL;
   }
 }

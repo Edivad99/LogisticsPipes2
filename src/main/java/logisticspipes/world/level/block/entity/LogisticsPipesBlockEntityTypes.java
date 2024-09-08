@@ -17,10 +17,10 @@ public class LogisticsPipesBlockEntityTypes {
     deferredRegister.register(modEventBus);
   }
 
-  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LogisticsTileGenericPipe>> PIPE_TRANSPORT_BASIC =
-      deferredRegister.register("steam_turbine",
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LogisticsTileGenericPipe>> PIPE_BASIC =
+      deferredRegister.register("pipe_basic",
           () -> BlockEntityType.Builder
-              .of(LogisticsTileGenericPipe::new, LogisticsPipesBlocks.PIPE_TRANSPORT_BASIC.get())
+              .of(LogisticsTileGenericPipe::new, LogisticsPipesBlocks.PIPE_BASIC.get())
               .build(null));
 
 }

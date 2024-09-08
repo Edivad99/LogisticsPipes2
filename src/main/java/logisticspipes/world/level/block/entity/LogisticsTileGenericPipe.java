@@ -7,6 +7,6 @@ import net.minecraft.world.level.block.state.BlockState;
 public class LogisticsTileGenericPipe extends BlockEntity {
 
   public LogisticsTileGenericPipe(BlockPos pos, BlockState blockState) {
-    super(LogisticsPipesBlockEntityTypes.PIPE_TRANSPORT_BASIC.get(), pos, blockState);
+    super(LogisticsPipesBlockEntityTypes.PIPE_BASIC.get(), pos, blockState);
   }
 }
