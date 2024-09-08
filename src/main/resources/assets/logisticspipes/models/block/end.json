@@ -1,5 +1,5 @@
 {
-  "render_type": "cutout",
+  "render_type": "minecraft:cutout",
   "textures": {
     "1": "logisticspipes:block/pipes/powered_pipe"
   },

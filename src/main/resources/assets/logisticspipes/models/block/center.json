@@ -1,7 +1,8 @@
 {
-  "render_type": "cutout",
+  "render_type": "minecraft:cutout",
   "textures": {
-    "1": "logisticspipes:block/pipes/powered_pipe"
+    "1": "logisticspipes:block/pipes/powered_pipe",
+    "particle": "#1"
   },
   "elements": [
     {
@@ -19,7 +20,7 @@
   ],
   "display": {
     "gui": {
-      "rotation": [45, 45, 0]
+      "rotation": [25, 45, 0]
     }
   }
 }

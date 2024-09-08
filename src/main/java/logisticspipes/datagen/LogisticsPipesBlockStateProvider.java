@@ -1,8 +1,8 @@
 package logisticspipes.datagen;
 
 import logisticspipes.LogisticsPipes;
+import logisticspipes.world.level.block.GenericPipeBlock;
 import logisticspipes.world.level.block.LogisticsPipesBlocks;
-import logisticspipes.world.level.block.PipeBasicBlock;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
@@ -32,22 +32,22 @@ public class LogisticsPipesBlockStateProvider extends BlockStateProvider {
         .modelFile(center).addModel().end()
         .part()
         .modelFile(end).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.NORTH), true).end()
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.NORTH), true).end()
         .part()
         .modelFile(end).rotationY(180).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.SOUTH), true).end()
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.SOUTH), true).end()
         .part()
         .modelFile(end).rotationY(90).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.EAST), true).end()
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.EAST), true).end()
         .part()
         .modelFile(end).rotationY(270).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.WEST), true).end()
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.WEST), true).end()
         .part()
         .modelFile(end).rotationX(90).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.DOWN), true).end()
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.DOWN), true).end()
         .part()
         .modelFile(end).rotationX(270).addModel()
-        .condition(PipeBasicBlock.CONNECTION.get(Direction.UP), true).end();
+        .condition(GenericPipeBlock.CONNECTION.get(Direction.UP), true).end();
 
     this.simpleBlockItem(LogisticsPipesBlocks.PIPE_BASIC.get(), center);
   }

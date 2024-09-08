@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.Nullable;
 import com.mojang.serialization.MapCodec;
 import logisticspipes.world.level.block.entity.LogisticsTileGenericPipe;
 import net.minecraft.core.BlockPos;
@@ -15,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,13 +24,13 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class PipeBasicBlock extends BaseEntityBlock {
+public class GenericPipeBlock extends BaseEntityBlock {
 
   public static final Map<Direction, BooleanProperty> CONNECTION =
       Arrays.stream(Direction.values())
           .collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.getName())));
 
-  private static final MapCodec<PipeBasicBlock> CODEC = simpleCodec(PipeBasicBlock::new);
+  private static final MapCodec<GenericPipeBlock> CODEC = simpleCodec(GenericPipeBlock::new);
   private static final VoxelShape CENTER = box(4, 4, 4, 12, 12, 12);
   private static final Map<Direction, VoxelShape> END = new HashMap<>() {
     {
@@ -43,7 +43,7 @@ public class PipeBasicBlock extends BaseEntityBlock {
     }
   };
 
-  public PipeBasicBlock(Properties properties) {
+  public GenericPipeBlock(Properties properties) {
     super(properties);
     BlockState state = this.stateDefinition.any();
     for (var property : CONNECTION.values()) {
@@ -107,22 +107,21 @@ public class PipeBasicBlock extends BaseEntityBlock {
     boolean isConnectToUp = checkBlock(level, pos, up, Direction.UP);
     boolean isConnectToDown = checkBlock(level, pos, down, Direction.DOWN);
 
-    BlockState result = defaultBlockState()
+    return defaultBlockState()
         .setValue(CONNECTION.get(Direction.NORTH), isConnectToNorth)
         .setValue(CONNECTION.get(Direction.EAST), isConnectToEast)
         .setValue(CONNECTION.get(Direction.SOUTH), isConnectToSouth)
         .setValue(CONNECTION.get(Direction.WEST), isConnectToWest)
         .setValue(CONNECTION.get(Direction.UP), isConnectToUp)
         .setValue(CONNECTION.get(Direction.DOWN), isConnectToDown);
-    return result;
   }
 
   private boolean checkBlock(LevelAccessor world, BlockPos pos, Block block, Direction direction) {
-    return block instanceof PipeBasicBlock;
+    return block instanceof GenericPipeBlock || block instanceof ChestBlock;
   }
 
   @Override
-  public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+  public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
     return new LogisticsTileGenericPipe(pos, state);
   }
 
