@@ -1,23 +1,40 @@
 package logisticspipes.world.level.block;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class StoneBlock extends Block {
 
   public static final Map<Direction, BooleanProperty> CONNECTION =
       Arrays.stream(Direction.values())
-          .collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.ordinal())));
+          .collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.getName())));
+
+  private static final VoxelShape CENTER = box(4, 4, 4, 12, 12, 12);
+  private static final Map<Direction, VoxelShape> END = new HashMap<>() {
+    {
+      put(Direction.NORTH, box(4, 4, 0, 12, 12, 4));
+      put(Direction.SOUTH, box(4, 4, 12, 12, 12, 16));
+      put(Direction.EAST, box(12, 4, 4, 16, 12, 12));
+      put(Direction.WEST, box(0, 4, 4, 4, 12, 12));
+      put(Direction.UP, box(4, 12, 4, 12, 16, 12));
+      put(Direction.DOWN, box(4, 0, 4, 12, 4, 12));
+    }
+  };
 
   public StoneBlock(Properties properties) {
     super(properties);
@@ -31,6 +48,18 @@ public class StoneBlock extends Block {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     CONNECTION.values().forEach(builder::add);
+  }
+
+  @Override
+  protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+      CollisionContext context) {
+    var shape = CENTER;
+    for (var value : Direction.values()) {
+      if (state.getValue(CONNECTION.get(value))) {
+        shape = Shapes.or(shape, END.get(value));
+      }
+    }
+    return shape;
   }
 
   @Override

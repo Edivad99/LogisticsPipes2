@@ -1,7 +1,6 @@
 package logisticspipes.client.renderer.blockentity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import logisticspipes.models.obj.LogisticsNewPipeModel;
 import logisticspipes.world.level.block.entity.LogisticsTileGenericPipe;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;

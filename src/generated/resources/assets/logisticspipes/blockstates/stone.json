@@ -10,7 +10,7 @@
         "model": "logisticspipes:block/end"
       },
       "when": {
-        "connection_2": "true"
+        "connection_north": "true"
       }
     },
     {
@@ -19,7 +19,7 @@
         "y": 180
       },
       "when": {
-        "connection_3": "true"
+        "connection_south": "true"
       }
     },
     {
@@ -28,7 +28,7 @@
         "y": 90
       },
       "when": {
-        "connection_5": "true"
+        "connection_east": "true"
       }
     },
     {
@@ -37,7 +37,7 @@
         "y": 270
       },
       "when": {
-        "connection_4": "true"
+        "connection_west": "true"
       }
     },
     {
@@ -46,7 +46,7 @@
         "x": 90
       },
       "when": {
-        "connection_0": "true"
+        "connection_down": "true"
       }
     },
     {
@@ -55,7 +55,7 @@
         "x": 270
       },
       "when": {
-        "connection_1": "true"
+        "connection_up": "true"
       }
     }
   ]

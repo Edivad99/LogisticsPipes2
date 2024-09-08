@@ -29,8 +29,7 @@ public class CustomBlockStateProvider extends BlockStateProvider {
 
     getMultipartBuilder(LogisticsPipesBlocks.STONE.get())
         .part()
-        .modelFile(center).addModel()
-        .end()
+        .modelFile(center).addModel().end()
         .part()
         .modelFile(end).addModel()
         .condition(StoneBlock.CONNECTION.get(Direction.NORTH), true).end()

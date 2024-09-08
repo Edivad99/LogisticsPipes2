@@ -1,6 +1,5 @@
 package logisticspipes.world.item;
 
-import java.util.Locale;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.world.level.block.LogisticsPipesBlocks;
 import net.minecraft.world.item.BlockItem;
