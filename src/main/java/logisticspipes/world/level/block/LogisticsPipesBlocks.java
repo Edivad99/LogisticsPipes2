@@ -19,7 +19,7 @@ public class LogisticsPipesBlocks {
 
   public static final DeferredBlock<Block> PIPE_BASIC =
       deferredRegister.register("pipe_basic",
-          () -> new GenericPipeBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+          () -> new BasicPipeBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
               .strength(5.0F, 6.0F)));
 
 }

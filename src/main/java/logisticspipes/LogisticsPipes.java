@@ -1,7 +1,9 @@
 package logisticspipes;
 
 import logisticspipes.client.ClientManager;
-import logisticspipes.datagen.LogisticsPipesBlockStateProvider;
+import logisticspipes.data.LogisticsPipesBlockStateProvider;
+import logisticspipes.data.LogisticsPipesLanguageProvider;
+import logisticspipes.world.inventory.LogisticsPipesMenuTypes;
 import logisticspipes.world.item.LogisticsPipesCreativeModTabs;
 import logisticspipes.world.item.LogisticsPipesItems;
 import logisticspipes.world.level.block.LogisticsPipesBlocks;
@@ -30,6 +32,7 @@ public class LogisticsPipes {
     LogisticsPipesItems.register(modEventBus);
     LogisticsPipesBlockEntityTypes.register(modEventBus);
     LogisticsPipesCreativeModTabs.register(modEventBus);
+    LogisticsPipesMenuTypes.register(modEventBus);
   }
 
   private void handleGatherData(GatherDataEvent event) {
@@ -39,6 +42,7 @@ public class LogisticsPipes {
     var fileHelper = event.getExistingFileHelper();
 
     generator.addProvider(event.includeClient(), new LogisticsPipesBlockStateProvider(packOutput, fileHelper));
+    generator.addProvider(event.includeClient(), new LogisticsPipesLanguageProvider(packOutput));
   }
 
 

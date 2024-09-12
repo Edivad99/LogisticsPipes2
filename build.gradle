@@ -83,9 +83,14 @@ configurations {
 dependencies {
   implementation group: 'net.neoforged', name: 'neoforge', version: neo_version
 
+  compileOnly "org.projectlombok:lombok:$lombok_version"
+  annotationProcessor "org.projectlombok:lombok:$lombok_version"
+
   compileOnly "mezz.jei:jei-$minecraft_version-common-api:$jei_version"
   compileOnly "mezz.jei:jei-$minecraft_version-neoforge-api:$jei_version"
   localRuntime "mezz.jei:jei-$minecraft_version-neoforge:$jei_version"
+
+  implementation "curse.maven:mekanism-268560:5680395"
 }
 
 spotless {
@@ -161,7 +166,7 @@ tasks.withType(ProcessResources).configureEach {
 }
 
 tasks.named('jar', Jar).configure {
-  from([sourceSets.api.output, sourceSets.main.output])
+  from(sourceSets.main.output)
   manifest {
     attributes([
       'Specification-Title'       : project.name,

@@ -1,4 +1,4 @@
-package logisticspipes.datagen;
+package logisticspipes.data;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.world.level.block.GenericPipeBlock;

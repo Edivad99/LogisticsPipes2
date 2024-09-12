@@ -1,4 +1,4 @@
-package logisticspipes.datagen;
+package logisticspipes.data;
 
 import logisticspipes.LogisticsPipes;
 import net.minecraft.data.PackOutput;
