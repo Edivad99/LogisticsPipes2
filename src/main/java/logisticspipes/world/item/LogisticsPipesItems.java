@@ -16,6 +16,9 @@ public class LogisticsPipesItems {
     deferredRegister.register(modEventBus);
   }
 
+  public static final DeferredItem<ItemSinkModule> MODULE_ITEM_SINK =
+      deferredRegister.registerItem("item_sink", ItemSinkModule::new);
+
   public static final DeferredItem<BlockItem> PIPE_BASIC =
       deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.PIPE_BASIC);
 }

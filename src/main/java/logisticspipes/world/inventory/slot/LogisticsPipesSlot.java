@@ -1,5 +1,6 @@
 package logisticspipes.world.inventory.slot;
 
+import lombok.Getter;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
@@ -7,6 +8,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class LogisticsPipesSlot extends Slot {
 
+  @Getter
   private boolean phantom;
   protected boolean canAdjustPhantom = true;
   private int stackLimit = -1;
@@ -39,10 +41,6 @@ public class LogisticsPipesSlot extends Slot {
   public final int getMaxStackSize() {
     int max = super.getMaxStackSize();
     return this.stackLimit < 0 ? max : Math.min(max, this.stackLimit); // issue #1347
-  }
-
-  public boolean isPhantom() {
-    return this.phantom;
   }
 
   public boolean canAdjustPhantom() {

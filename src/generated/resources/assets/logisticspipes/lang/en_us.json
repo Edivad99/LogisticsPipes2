@@ -1,3 +1,4 @@
 {
-  "block.logisticspipes.pipe_basic": "Basic Pipe"
+  "block.logisticspipes.pipe_basic": "Basic Pipe",
+  "item.logisticspipes.item_sink": "ItemSink Module"
 }

@@ -13,7 +13,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 public abstract class GenericPipeBlock extends BaseEntityBlock {
 
@@ -86,19 +86,12 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
   }
 
   private BlockState getState(LevelAccessor level, BlockPos pos) {
-    Block north = level.getBlockState(pos.north()).getBlock();
-    Block east = level.getBlockState(pos.east()).getBlock();
-    Block south = level.getBlockState(pos.south()).getBlock();
-    Block west = level.getBlockState(pos.west()).getBlock();
-    Block up = level.getBlockState(pos.above()).getBlock();
-    Block down = level.getBlockState(pos.below()).getBlock();
-
-    boolean isConnectToNorth = checkBlock(level, pos, north, Direction.NORTH);
-    boolean isConnectToEast = checkBlock(level, pos, east, Direction.EAST);
-    boolean isConnectToSouth = checkBlock(level, pos, south, Direction.SOUTH);
-    boolean isConnectToWest = checkBlock(level, pos, west, Direction.WEST);
-    boolean isConnectToUp = checkBlock(level, pos, up, Direction.UP);
-    boolean isConnectToDown = checkBlock(level, pos, down, Direction.DOWN);
+    boolean isConnectToNorth = checkBlock(level, pos.north(), Direction.NORTH);
+    boolean isConnectToEast = checkBlock(level, pos.east(), Direction.EAST);
+    boolean isConnectToSouth = checkBlock(level, pos.south(), Direction.SOUTH);
+    boolean isConnectToWest = checkBlock(level, pos.west(), Direction.WEST);
+    boolean isConnectToUp = checkBlock(level, pos.above(), Direction.UP);
+    boolean isConnectToDown = checkBlock(level, pos.below(), Direction.DOWN);
 
     return defaultBlockState()
         .setValue(CONNECTION.get(Direction.NORTH), isConnectToNorth)
@@ -109,8 +102,15 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
         .setValue(CONNECTION.get(Direction.DOWN), isConnectToDown);
   }
 
-  private boolean checkBlock(LevelAccessor world, BlockPos pos, Block block, Direction direction) {
-    return block instanceof GenericPipeBlock || block instanceof ChestBlock;
+  private boolean checkBlock(LevelAccessor levelAccessor, BlockPos pos, Direction direction) {
+    if (levelAccessor.getBlockState(pos).getBlock() instanceof GenericPipeBlock) {
+      return true;
+    }
+    if (levelAccessor instanceof Level level) {
+      return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null) != null;
+    }
+    return false;
+    //return block instanceof GenericPipeBlock || block instanceof ChestBlock;
   }
 
   @Override

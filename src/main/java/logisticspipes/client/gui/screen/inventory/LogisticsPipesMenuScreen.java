@@ -3,6 +3,7 @@ package logisticspipes.client.gui.screen.inventory;
 import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.systems.RenderSystem;
 import logisticspipes.world.inventory.LogisticsPipesMenu;
+import logisticspipes.world.inventory.slot.LogisticsPipesSlot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -81,10 +82,10 @@ public abstract class LogisticsPipesMenuScreen<T extends LogisticsPipesMenu>
   @Override
   public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX,
       double deltaY) {
-    /*Slot slot = this.getSlotUnderMouse();
-    if (button == GLFW.GLFW_MOUSE_BUTTON_1 && slot instanceof RailcraftSlot railcraftSlot
-        && railcraftSlot.isPhantom())
-      return true;*/
+    if (button == GLFW.GLFW_MOUSE_BUTTON_1 &&
+        this.getSlotUnderMouse() instanceof LogisticsPipesSlot slot && slot.isPhantom()) {
+      return true;
+    }
     return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
   }
 }

@@ -6,9 +6,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class LogisticsTileGenericPipe extends BlockEntity {
+public class LogisticsGenericPipeBlockEntity extends BlockEntity {
 
-  public LogisticsTileGenericPipe(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
+  public LogisticsGenericPipeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
     super(type, pos, blockState);
   }
 

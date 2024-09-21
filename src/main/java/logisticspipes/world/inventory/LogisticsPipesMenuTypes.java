@@ -1,9 +1,11 @@
 package logisticspipes.world.inventory;
 
 import logisticspipes.LogisticsPipes;
+import logisticspipes.util.item.ModuleInventory;
 import logisticspipes.world.level.block.entity.BasicPipeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -26,6 +28,20 @@ public class LogisticsPipesMenuTypes {
   public static final DeferredHolder<MenuType<?>, MenuType<BasicPipeMenu>> BASIC_PIPE =
       deferredRegister.register("basic_pipe",
           () -> blockEntityMenu(BasicPipeBlockEntity.class, BasicPipeMenu::new));
+
+  public static final DeferredHolder<MenuType<?>, MenuType<ItemSinkModuleMenu>> ITEM_SINK =
+      deferredRegister.register("item_sink",
+          () -> itemMenu(ItemSinkModuleMenu::new));
+
+  private static <T extends AbstractContainerMenu> MenuType<T> itemMenu(CustomMenuFactory<T, ModuleInventory> factory) {
+    IContainerFactory<T> containerFactory =  (id, inventory, packetBuffer) -> {
+      var hand = packetBuffer.readEnum(InteractionHand.class);
+      var player = inventory.player;
+      var itemStack = player.getItemInHand(hand);
+      return factory.create(id, inventory, new ModuleInventory(itemStack, hand));
+    };
+    return new MenuType<>(containerFactory, FeatureFlags.DEFAULT_FLAGS);
+  }
 
   private static <T extends AbstractContainerMenu, E extends BlockEntity> MenuType<T>
   blockEntityMenu(Class<E> entityType, CustomMenuFactory<T, E> factory) {

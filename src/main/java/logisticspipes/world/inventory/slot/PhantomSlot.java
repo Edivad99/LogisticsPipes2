@@ -1,7 +1,6 @@
 package logisticspipes.world.inventory.slot;
 
 import net.minecraft.world.Container;
-import net.minecraft.world.inventory.Slot;
 
 public class PhantomSlot extends LogisticsPipesSlot {
 
