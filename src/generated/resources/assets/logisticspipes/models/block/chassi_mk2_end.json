@@ -1,0 +1,6 @@
+{
+  "parent": "logisticspipes:block/pipe_end",
+  "textures": {
+    "1": "logisticspipes:block/pipes/chassi_mk2/powered_pipe"
+  }
+}

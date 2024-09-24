@@ -1,28 +1,38 @@
 package logisticspipes.modules;
 
 import java.util.Arrays;
-import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
+import logisticspipes.utils.SinkReply;
+import logisticspipes.world.level.block.entity.ChassiPipeBlockEntity;
 import lombok.Getter;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 
-@Getter
-public class ModuleItemSink extends ModuleLogistics {
+public class ModuleItemSink extends LogisticsModule {
 
-  public final SimpleContainer requestedItemsInventory = new SimpleContainer(9);
-  public boolean defaultRoute;
+  @Getter
+  private final SimpleContainer requestedItemsInventory = new SimpleContainer(9);
+  @Getter
+  private boolean defaultRoute;
+
+  private SinkReply sinkReply;
+  private SinkReply sinkReplyDefault;
+
+  public ModuleItemSink() {
+    this.requestedItemsInventory.addListener(__ -> this.service.setChanged());
+  }
 
   @Override
-  public void registerModule(Level level, BlockPos pos) {
-    this.level = level;
-    this.pos = pos;
+  public void registerPosition(ModulePositionType slot, int positionInt) {
+    super.registerPosition(slot, positionInt);
+    this.sinkReply = new SinkReply(SinkReply.FixedPriority.ITEM_SINK, 0, true, false, 1, 0,
+        new ChassiPipeBlockEntity.ChassiTargetInformation(this.getPositionInt()));
+    this.sinkReplyDefault = new SinkReply(SinkReply.FixedPriority.DEFAULT_ROUTE, 0, true, true, 1, 0,
+        new ChassiPipeBlockEntity.ChassiTargetInformation(this.getPositionInt()));
   }
 
   @Override
@@ -39,11 +49,18 @@ public class ModuleItemSink extends ModuleLogistics {
     this.defaultRoute = tag.getBoolean("defaultRoute");
   }
 
+  public void setDefaultRoute(boolean defaultRoute) {
+    this.defaultRoute = defaultRoute;
+    this.service.setChanged();
+  }
+
   @Nullable
   private IItemHandler getInventory(Direction direction) {
-    Objects.requireNonNull(this.level, "Module is not registered");
-    Objects.requireNonNull(this.pos, "Module is not registered");
-    return this.level.getCapability(Capabilities.ItemHandler.BLOCK, this.pos.relative(direction), null);
+    var level = this.getLevel();
+    if (level == null) {
+      return null;
+    }
+    return level.getCapability(Capabilities.ItemHandler.BLOCK, this.getPos().relative(direction), null);
   }
 
   public boolean isNearInventory() {

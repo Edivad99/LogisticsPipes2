@@ -2,7 +2,7 @@ package logisticspipes.client.gui.screen.inventory;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.network.to_server.UpdateModuleItemSinkMessage;
-import logisticspipes.world.inventory.ItemSinkModuleMenu;
+import logisticspipes.world.inventory.item.ItemSinkModuleMenu;
 import logisticspipes.world.item.ItemSinkModule;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

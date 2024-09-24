@@ -1,0 +1,6 @@
+{
+  "parent": "logisticspipes:block/pipe_center",
+  "textures": {
+    "1": "logisticspipes:block/pipes/basic/powered_pipe"
+  }
+}

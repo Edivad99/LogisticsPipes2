@@ -2,12 +2,12 @@
   "multipart": [
     {
       "apply": {
-        "model": "logisticspipes:block/center"
+        "model": "logisticspipes:block/basic_center"
       }
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end"
+        "model": "logisticspipes:block/basic_end"
       },
       "when": {
         "connection_north": "true"
@@ -15,7 +15,7 @@
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end",
+        "model": "logisticspipes:block/basic_end",
         "y": 180
       },
       "when": {
@@ -24,7 +24,7 @@
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end",
+        "model": "logisticspipes:block/basic_end",
         "y": 90
       },
       "when": {
@@ -33,7 +33,7 @@
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end",
+        "model": "logisticspipes:block/basic_end",
         "y": 270
       },
       "when": {
@@ -42,7 +42,7 @@
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end",
+        "model": "logisticspipes:block/basic_end",
         "x": 90
       },
       "when": {
@@ -51,7 +51,7 @@
     },
     {
       "apply": {
-        "model": "logisticspipes:block/end",
+        "model": "logisticspipes:block/basic_end",
         "x": 270
       },
       "when": {

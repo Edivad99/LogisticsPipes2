@@ -1,6 +1,8 @@
-package logisticspipes.world.inventory;
+package logisticspipes.world.inventory.item;
 
-import logisticspipes.util.item.ModuleInventory;
+import logisticspipes.utils.item.ModuleInventory;
+import logisticspipes.world.inventory.LogisticsPipesMenu;
+import logisticspipes.world.inventory.LogisticsPipesMenuTypes;
 import logisticspipes.world.inventory.slot.PhantomSlot;
 import lombok.Getter;
 import net.minecraft.world.entity.player.Inventory;

@@ -1,5 +1,7 @@
 package logisticspipes;
 
+import org.slf4j.Logger;
+import com.mojang.logging.LogUtils;
 import logisticspipes.client.ClientManager;
 import logisticspipes.data.LogisticsPipesBlockStateProvider;
 import logisticspipes.data.LogisticsPipesItemStateProvider;
@@ -15,12 +17,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 @Mod(LogisticsPipes.ID)
 public class LogisticsPipes {
 
   public static final String ID = "logisticspipes";
+  public static Logger LOG = LogUtils.getLogger();
 
   public LogisticsPipes(ModContainer modContainer, Dist dist) {
 
@@ -52,6 +56,9 @@ public class LogisticsPipes {
     generator.addProvider(event.includeClient(), new LogisticsPipesLanguageProvider(packOutput));
   }
 
+  public static boolean isDebug() {
+    return !FMLLoader.isProduction();
+  }
 
   public static ResourceLocation rl(String path) {
     return ResourceLocation.fromNamespaceAndPath(ID, path);

@@ -27,5 +27,6 @@ public class LogisticsPipesCreativeModTabs {
           .displayItems((parameters, output) -> {
             output.accept(LogisticsPipesItems.MODULE_ITEM_SINK.get());
             output.accept(LogisticsPipesItems.PIPE_BASIC.get());
+            output.accept(LogisticsPipesItems.CHASSI_MK2.get());
           }).build());
 }

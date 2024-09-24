@@ -21,4 +21,7 @@ public class LogisticsPipesItems {
 
   public static final DeferredItem<BlockItem> PIPE_BASIC =
       deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.PIPE_BASIC);
+
+  public static final DeferredItem<BlockItem> CHASSI_MK2 =
+      deferredRegister.registerSimpleBlockItem(LogisticsPipesBlocks.PIPE_CHASSI_MK2);
 }

@@ -26,8 +26,8 @@ public record ImportItemSinkMessage(BlockPos pos) implements CustomPacketPayload
   public static void handle(ImportItemSinkMessage message, IPayloadContext context) {
     var player = context.player();
     var level = player.level();
-    if (level.getBlockEntity(message.pos) instanceof BasicPipeBlockEntity pipe) {
-      pipe.getModuleItemSink().importFromAdjacentInventory();
+    if (level.getBlockEntity(message.pos) instanceof BasicPipeBlockEntity blockEntity) {
+      blockEntity.pipe.getLogisticsModule().importFromAdjacentInventory();
     }
   }
 }

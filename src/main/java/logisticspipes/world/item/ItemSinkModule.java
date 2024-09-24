@@ -1,8 +1,8 @@
 package logisticspipes.world.item;
 
 import logisticspipes.modules.ModuleItemSink;
-import logisticspipes.util.item.ModuleInventory;
-import logisticspipes.world.inventory.ItemSinkModuleMenu;
+import logisticspipes.utils.item.ModuleInventory;
+import logisticspipes.world.inventory.item.ItemSinkModuleMenu;
 import logisticspipes.world.item.component.LogisticsPipesDataComponents;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;

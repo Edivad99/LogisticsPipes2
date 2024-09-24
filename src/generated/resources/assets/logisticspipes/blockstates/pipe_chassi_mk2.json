@@ -1,0 +1,62 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_center"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end"
+      },
+      "when": {
+        "connection_north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end",
+        "y": 180
+      },
+      "when": {
+        "connection_south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end",
+        "y": 90
+      },
+      "when": {
+        "connection_east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end",
+        "y": 270
+      },
+      "when": {
+        "connection_west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end",
+        "x": 90
+      },
+      "when": {
+        "connection_down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "logisticspipes:block/chassi_mk2_end",
+        "x": 270
+      },
+      "when": {
+        "connection_up": "true"
+      }
+    }
+  ]
+}

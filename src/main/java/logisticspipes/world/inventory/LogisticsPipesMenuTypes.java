@@ -1,8 +1,10 @@
 package logisticspipes.world.inventory;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.util.item.ModuleInventory;
+import logisticspipes.utils.item.ModuleInventory;
+import logisticspipes.world.inventory.item.ItemSinkModuleMenu;
 import logisticspipes.world.level.block.entity.BasicPipeBlockEntity;
+import logisticspipes.world.level.block.entity.ChassiPipeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +30,10 @@ public class LogisticsPipesMenuTypes {
   public static final DeferredHolder<MenuType<?>, MenuType<BasicPipeMenu>> BASIC_PIPE =
       deferredRegister.register("basic_pipe",
           () -> blockEntityMenu(BasicPipeBlockEntity.class, BasicPipeMenu::new));
+
+  public static final DeferredHolder<MenuType<?>, MenuType<ChassiPipeMenu>> CHASSI_PIPE =
+      deferredRegister.register("chassi_pipe",
+          () -> blockEntityMenu(ChassiPipeBlockEntity.class, ChassiPipeMenu::new));
 
   public static final DeferredHolder<MenuType<?>, MenuType<ItemSinkModuleMenu>> ITEM_SINK =
       deferredRegister.register("item_sink",

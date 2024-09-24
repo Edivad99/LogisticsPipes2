@@ -23,4 +23,10 @@ public class LogisticsPipesBlockEntityTypes {
               .of(BasicPipeBlockEntity::new, LogisticsPipesBlocks.PIPE_BASIC.get())
               .build(null));
 
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChassiPipeBlockEntity>> CHASSI_MK2 =
+      deferredRegister.register("chassi_mk2",
+          () -> BlockEntityType.Builder
+              .of(ChassiPipeBlockEntity::new, LogisticsPipesBlocks.PIPE_CHASSI_MK2.get())
+              .build(null));
+
 }

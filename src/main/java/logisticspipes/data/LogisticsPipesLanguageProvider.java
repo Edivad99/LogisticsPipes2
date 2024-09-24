@@ -24,5 +24,6 @@ public class LogisticsPipesLanguageProvider extends LanguageProvider {
 
   private void blockTranslations() {
     this.add(LogisticsPipesBlocks.PIPE_BASIC.get(), "Basic Pipe");
+    this.add(LogisticsPipesBlocks.PIPE_CHASSI_MK2.get(), "Chassi MK2");
   }
 }

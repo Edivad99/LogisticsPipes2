@@ -1,4 +1,4 @@
-package logisticspipes.util.item;
+package logisticspipes.utils.item;
 
 import org.jetbrains.annotations.Nullable;
 import lombok.Getter;

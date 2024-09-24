@@ -15,10 +15,11 @@ public class BasicPipeMenu extends LogisticsPipesMenu {
   public BasicPipeMenu(int id, Inventory inventory, BasicPipeBlockEntity blockEntity) {
     super(LogisticsPipesMenuTypes.BASIC_PIPE.get(), id, inventory.player, blockEntity::isStillValid);
     this.blockEntity = blockEntity;
-    this.module = blockEntity.getModuleItemSink();
+    this.module = blockEntity.pipe.getLogisticsModule();
 
-    for (int i = 0; i < this.module.requestedItemsInventory.getContainerSize(); i++) {
-      this.addSlot(new PhantomSlot(this.module.requestedItemsInventory, i, 8 + i * 18, 18));
+    var requestedItemsInventory = this.module.getRequestedItemsInventory();
+    for (int i = 0; i < requestedItemsInventory.getContainerSize(); i++) {
+      this.addSlot(new PhantomSlot(requestedItemsInventory, i, 8 + i * 18, 18));
     }
 
     this.addInventorySlots(inventory, 142);

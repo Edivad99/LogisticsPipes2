@@ -1,6 +1,7 @@
 package logisticspipes.client;
 
 import logisticspipes.client.gui.screen.inventory.BasicPipeScreen;
+import logisticspipes.client.gui.screen.inventory.ChassiPipeScreen;
 import logisticspipes.client.gui.screen.inventory.ItemSinkModuleScreen;
 import logisticspipes.client.renderer.blockentity.LogisticsPipesEntityRenderers;
 import logisticspipes.world.inventory.LogisticsPipesMenuTypes;
@@ -17,6 +18,7 @@ public class ClientManager {
 
   private static void handleRegisterMenuScreens(RegisterMenuScreensEvent event) {
     event.register(LogisticsPipesMenuTypes.BASIC_PIPE.get(), BasicPipeScreen::new);
+    event.register(LogisticsPipesMenuTypes.CHASSI_PIPE.get(), ChassiPipeScreen::new);
     event.register(LogisticsPipesMenuTypes.ITEM_SINK.get(), ItemSinkModuleScreen::new);
   }
 
