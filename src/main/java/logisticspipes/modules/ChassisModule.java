@@ -22,4 +22,20 @@ public class ChassisModule extends LogisticsModule {
   public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
 
   }
+
+  @Override
+  public boolean receivePassive() {
+    /*for (SlottedModule slottedModule : modules) {
+      final LogisticsModule module = slottedModule.getModule();
+      if (module != null && module.receivePassive()) {
+        return true;
+      }
+    }*/
+    return false;
+  }
+
+  @Override
+  public void tick() {
+
+  }
 }

@@ -1,12 +1,16 @@
 package logisticspipes.modules;
 
+import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ILevelProvider;
 import logisticspipes.interfaces.IPipeServiceProvider;
+import logisticspipes.utils.SinkReply;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
@@ -62,6 +66,35 @@ public abstract class LogisticsModule implements INBTSerializable<CompoundTag> {
     }
     return this.level.getLevel();
   }
+
+  /**
+   * is this module a valid destination for bounced items.
+   */
+  public abstract boolean receivePassive();
+
+  /**
+   * Gives a sink answer on the given itemstack
+   *
+   * @param stack              to sink
+   * @param item               to sink
+   * @param bestPriority       best priority seen so far
+   * @param bestCustomPriority best custom sub-priority
+   * @param allowDefault       is a default only sink allowed to sink this?
+   * @param includeInTransit   include the "in transit" items? -- true for a destination
+   *                           search, false for a sink check.
+   * @param forcePassive       check for passive routing only, in case this method is redirected to other sinks
+   * @return SinkReply whether the module sinks the item or not
+   */
+  @Nullable
+  public SinkReply sinksItem(ItemStack stack, Item item, int bestPriority,
+      int bestCustomPriority, boolean allowDefault, boolean includeInTransit, boolean forcePassive) {
+    return null;
+  }
+
+  /**
+   * A tick for the Module
+   */
+  public abstract void tick();
 
   @Getter
   public enum ModulePositionType {

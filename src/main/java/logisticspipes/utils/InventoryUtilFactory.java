@@ -47,7 +47,7 @@ public class InventoryUtilFactory {
   }
 
   @Nullable
-  private IInventoryUtil getSpecialHandlerFor(BlockEntity blockEntity, @Nullable Direction direction, ProviderMode mode) {
+  SpecialInventoryHandler getSpecialHandlerFor(BlockEntity blockEntity, @Nullable Direction direction, ProviderMode mode) {
     return this.handlerFactories.stream()
         .filter(factory -> factory.isType(blockEntity, direction))
         .map(factory -> factory.getUtilForTile(blockEntity, direction, mode))

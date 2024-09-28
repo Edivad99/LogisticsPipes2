@@ -1,6 +1,7 @@
 package logisticspipes.network;
 
 import logisticspipes.LogisticsPipes;
+import logisticspipes.network.to_client.ItemBufferSyncPacket;
 import logisticspipes.network.to_server.ImportItemSinkMessage;
 import logisticspipes.network.to_server.SetDefaultRouteItemSinkMessage;
 import logisticspipes.network.to_server.UpdateModuleItemSinkMessage;
@@ -30,6 +31,7 @@ public final class PacketHandler {
   }
 
   private static void registerServerToClient(PayloadRegistrar registrar) {
-
+    registrar.playToClient(ItemBufferSyncPacket.TYPE,
+        ItemBufferSyncPacket.STREAM_CODEC, ItemBufferSyncPacket::handle);
   }
 }

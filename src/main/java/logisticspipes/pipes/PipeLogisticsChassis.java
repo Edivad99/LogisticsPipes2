@@ -18,4 +18,9 @@ public class PipeLogisticsChassis extends CoreRoutedPipe {
   public LogisticsModule getLogisticsModule() {
     return this.module;
   }
+
+  @Override
+  public ItemSendMode getItemSendMode() {
+    return ItemSendMode.NORMAL;
+  }
 }

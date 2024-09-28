@@ -38,6 +38,11 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
   }
 
   @Override
+  public ItemSendMode getItemSendMode() {
+    return ItemSendMode.NORMAL;
+  }
+
+  @Override
   public ModuleItemSink getLogisticsModule() {
     return this.module;
   }

@@ -85,4 +85,13 @@ public class ModuleItemSink extends LogisticsModule {
       break;
     }
   }
+
+  @Override
+  public boolean receivePassive() {
+    return true;
+  }
+
+  @Override
+  public void tick() {
+  }
 }

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.tags.LogisticsPipesTags;
+import logisticspipes.utils.DoubleCoordinates;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,6 +25,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -38,6 +40,9 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
   public static final Map<Direction, BooleanProperty> CONNECTION =
       Arrays.stream(Direction.values())
           .collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.getName())));
+
+  private static long LAST_REMOVED_DATE = -1;
+  public static Map<DoubleCoordinates, CoreUnroutedPipe> PIPE_REMOVED = new HashMap<>();
 
   private static final VoxelShape CENTER = box(4, 4, 4, 12, 12, 12);
   private static final Map<Direction, VoxelShape> END = new HashMap<>() {
@@ -92,6 +97,11 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
   public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
       BlockPos fromPos, boolean isMoving) {
     super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+    CoreUnroutedPipe pipe = GenericPipeBlock.getPipe(level, pos);
+
+    if (GenericPipeBlock.isValid(pipe)) {
+      pipe.container.scheduleNeighborChange();
+    }
     level.setBlockAndUpdate(pos, getState(level, pos));
   }
 
@@ -141,6 +151,13 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
   }
 
   @Override
+  protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
+      boolean movedByPiston) {
+    GenericPipeBlock.removePipe(GenericPipeBlock.getPipe(level, pos));
+    super.onRemove(state, level, pos, newState, movedByPiston);
+  }
+
+  @Override
   protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
       BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
     if (player instanceof ServerPlayer) {
@@ -153,11 +170,72 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
     return ItemInteractionResult.sidedSuccess(level.isClientSide());
   }
 
+  @Nullable
+  public static CoreUnroutedPipe getPipe(Level level, BlockPos pos) {
+    BlockEntity blockEntity = level.getBlockEntity(pos);
+
+    if (!(blockEntity instanceof LogisticsGenericPipeBlockEntity<?>) || blockEntity.isRemoved()) {
+      return null;
+    } else {
+      return ((LogisticsGenericPipeBlockEntity<?>) blockEntity).pipe;
+    }
+  }
+
   public static boolean isValid(@Nullable CoreUnroutedPipe pipe) {
     return GenericPipeBlock.isFullyDefined(pipe);
   }
 
   public static boolean isFullyDefined(@Nullable CoreUnroutedPipe pipe) {
     return pipe != null && pipe.container != null;
+  }
+
+  public static void removePipe(@Nullable CoreUnroutedPipe pipe) {
+    if (!GenericPipeBlock.isValid(pipe)) {
+      return;
+    }
+
+    if (pipe.canBeDestroyed() || pipe.destroyByPlayer()) {
+      pipe.onBlockRemoval();
+    } else if (pipe.preventRemove()) {
+      //TODO: Fix this
+      //GenericPipeBlock.cacheTileToPreventRemoval(pipe);
+    }
+
+    Level level = pipe.container.getLevel();
+
+    if (GenericPipeBlock.LAST_REMOVED_DATE != level.getGameTime()) {
+      GenericPipeBlock.LAST_REMOVED_DATE = level.getGameTime();
+      GenericPipeBlock.PIPE_REMOVED.clear();
+      //GenericPipeBlock.pipeSubMultiRemoved.clear();
+    }
+
+    /*if (pipe.isMultiBlock()) {
+      if (pipe.preventRemove()) {
+        throw new UnsupportedOperationException("A multi block can't be protected against removal.");
+      }
+      LPPositionSet<DoubleCoordinatesType<CoreMultiBlockPipe.SubBlockTypeForShare>> list = ((CoreMultiBlockPipe) pipe).getRotatedSubBlocks();
+      list.forEach(pos -> pos.add(new DoubleCoordinates(pipe)));
+      for (DoubleCoordinates pos : pipe.container.subMultiBlock) {
+        TileEntity tile = pos.getTileEntity(level);
+        if (tile instanceof LogisticsTileGenericSubMultiBlock) {
+          DoubleCoordinatesType<CoreMultiBlockPipe.SubBlockTypeForShare> equ = list.findClosest(pos);
+          if (equ != null) {
+            ((LogisticsTileGenericSubMultiBlock) tile).removeSubType(equ.getType());
+          }
+          if (((LogisticsTileGenericSubMultiBlock) tile).removeMainPipe(new DoubleCoordinates(pipe))) {
+            LogisticsBlockGenericSubMultiBlock.redirectedToMainPipe = true;
+            pos.setBlockToAir(level);
+            LogisticsBlockGenericSubMultiBlock.redirectedToMainPipe = false;
+            LogisticsBlockGenericPipe.pipeSubMultiRemoved.put(new DoubleCoordinates(pos), pipe.container.getPos());
+          } else {
+            MainProxy.sendPacketToAllWatchingChunk(tile, ((LogisticsTileGenericSubMultiBlock) tile).getLPDescriptionPacket());
+          }
+        }
+      }
+    }*/
+
+    BlockPos pos = pipe.container.getBlockPos();
+    GenericPipeBlock.PIPE_REMOVED.put(new DoubleCoordinates(pos), pipe);
+    level.removeBlockEntity(pos);
   }
 }

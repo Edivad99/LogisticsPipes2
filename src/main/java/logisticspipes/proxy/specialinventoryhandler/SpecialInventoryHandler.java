@@ -4,10 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.utils.ProviderMode;
+import logisticspipes.utils.transactor.ITransactor;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public abstract class SpecialInventoryHandler implements IInventoryUtil {
+public abstract class SpecialInventoryHandler implements IInventoryUtil, ITransactor {
 
   public interface Factory {
 
