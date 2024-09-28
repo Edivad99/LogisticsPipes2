@@ -1,6 +1,5 @@
 package logisticspipes.utils;
 
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.interfaces.ICoordinates;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;

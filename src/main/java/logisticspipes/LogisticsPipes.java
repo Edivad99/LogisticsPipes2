@@ -1,6 +1,5 @@
 package logisticspipes;
 
-import java.util.function.Function;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 import logisticspipes.client.ClientManager;
@@ -24,10 +23,7 @@ import logisticspipes.world.item.component.LogisticsPipesDataComponents;
 import logisticspipes.world.level.block.LogisticsPipesBlocks;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import logisticspipes.world.level.block.entity.LogisticsPipesBlockEntityTypes;
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -35,13 +31,11 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.items.IItemHandler;
 
 @Mod(LogisticsPipes.ID)
 public class LogisticsPipes {

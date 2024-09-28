@@ -15,4 +15,3 @@ public interface ISpecialPipedConnection {
 
   List<SpecialPipeConnection.ConnectionInformation> getConnections(IPipeInformationProvider startPipe, EnumSet<PipeRoutingConnectionType> connection, Direction side);
 }
-

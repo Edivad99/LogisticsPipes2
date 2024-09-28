@@ -2,11 +2,8 @@ package logisticspipes.network.to_client;
 
 import java.util.List;
 import logisticspipes.LogisticsPipes;
-import logisticspipes.network.to_server.ImportItemSinkMessage;
-import logisticspipes.network.to_server.SetDefaultRouteItemSinkMessage;
 import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.utils.tuples.Triplet;
-import logisticspipes.world.level.block.entity.BasicPipeBlockEntity;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;

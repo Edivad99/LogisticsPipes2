@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import logisticspipes.interfaces.IPipeUpgradeManager;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.DoubleCoordinates;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;

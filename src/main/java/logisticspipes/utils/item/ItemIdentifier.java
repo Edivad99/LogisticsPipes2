@@ -1,28 +1,6 @@
 /*
 package logisticspipes.utils.item;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReferenceArray;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.jetbrains.annotations.Nullable;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 */
 /**
@@ -471,107 +449,107 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier> {
     return maxStackSize;
   }
 
-	*/
+  */
 /*private static Map<Integer, Object> getArrayAsMap(int[] array) {
-		HashMap<Integer, Object> map = new HashMap<>();
-		int i = 0;
-		for (int object : array) {
-			map.put(i, object);
-			i++;
-		}
-		return map;
-	}
+    HashMap<Integer, Object> map = new HashMap<>();
+    int i = 0;
+    for (int object : array) {
+      map.put(i, object);
+      i++;
+    }
+    return map;
+  }
 
-	private static Map<Integer, Object> getArrayAsMap(byte[] array) {
-		HashMap<Integer, Object> map = new HashMap<>();
-		int i = 1;
-		for (byte object : array) {
-			map.put(i, object);
-			i++;
-		}
-		return map;
-	}
+  private static Map<Integer, Object> getArrayAsMap(byte[] array) {
+    HashMap<Integer, Object> map = new HashMap<>();
+    int i = 1;
+    for (byte object : array) {
+      map.put(i, object);
+      i++;
+    }
+    return map;
+  }
 
-	public static Map<Object, Object> getNBTBaseAsMap(NBTBase nbt) throws SecurityException, IllegalArgumentException {
-		if (nbt == null) return null;
+  public static Map<Object, Object> getNBTBaseAsMap(NBTBase nbt) throws SecurityException, IllegalArgumentException {
+    if (nbt == null) return null;
 
-		if (nbt instanceof NBTTagByte) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagByte");
-			map.put("value", ((NBTTagByte) nbt).getByte());
-			return map;
-		} else if (nbt instanceof NBTTagByteArray) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagByteArray");
-			map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagByteArray) nbt).getByteArray()));
-			return map;
-		} else if (nbt instanceof NBTTagDouble) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagDouble");
-			map.put("value", ((NBTTagDouble) nbt).getDouble());
-			return map;
-		} else if (nbt instanceof NBTTagFloat) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagFloat");
-			map.put("value", ((NBTTagFloat) nbt).getFloat());
-			return map;
-		} else if (nbt instanceof NBTTagInt) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagInt");
-			map.put("value", ((NBTTagInt) nbt).getInt());
-			return map;
-		} else if (nbt instanceof NBTTagIntArray) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagIntArray");
-			map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagIntArray) nbt).getIntArray()));
-			return map;
-		} else if (nbt instanceof NBTTagList) {
-			HashMap<Integer, Object> content = new HashMap<>();
-			int i = 1;
-			for (Object object : ((NBTTagList) nbt)) {
-				if (object instanceof NBTBase) {
-					content.put(i, ItemIdentifier.getNBTBaseAsMap((NBTBase) object));
-				}
-				i++;
-			}
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagList");
-			map.put("value", content);
-			return map;
-		} else if (nbt instanceof NBTTagCompound) {
-			HashMap<Object, Object> content = new HashMap<>();
-			HashMap<Integer, Object> keys = new HashMap<>();
-			int i = 1;
-			for (String key : ((NBTTagCompound) nbt).getKeySet()) {
-				NBTBase value = ((NBTTagCompound) nbt).getTag(key);
-				content.put(key, ItemIdentifier.getNBTBaseAsMap(value));
-				keys.put(i, key);
-				i++;
-			}
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagCompound");
-			map.put("value", content);
-			map.put("keys", keys);
-			return map;
-		} else if (nbt instanceof NBTTagLong) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagLong");
-			map.put("value", ((NBTTagLong) nbt).getLong());
-			return map;
-		} else if (nbt instanceof NBTTagShort) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagShort");
-			map.put("value", ((NBTTagShort) nbt).getShort());
-			return map;
-		} else if (nbt instanceof NBTTagString) {
-			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagString");
-			map.put("value", ((NBTTagString) nbt).getString());
-			return map;
-		} else {
-			throw new UnsupportedOperationException("Unsupported NBTBase of type:" + nbt.getClass().getName());
-		}
-	}*//*
+    if (nbt instanceof NBTTagByte) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagByte");
+      map.put("value", ((NBTTagByte) nbt).getByte());
+      return map;
+    } else if (nbt instanceof NBTTagByteArray) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagByteArray");
+      map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagByteArray) nbt).getByteArray()));
+      return map;
+    } else if (nbt instanceof NBTTagDouble) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagDouble");
+      map.put("value", ((NBTTagDouble) nbt).getDouble());
+      return map;
+    } else if (nbt instanceof NBTTagFloat) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagFloat");
+      map.put("value", ((NBTTagFloat) nbt).getFloat());
+      return map;
+    } else if (nbt instanceof NBTTagInt) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagInt");
+      map.put("value", ((NBTTagInt) nbt).getInt());
+      return map;
+    } else if (nbt instanceof NBTTagIntArray) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagIntArray");
+      map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagIntArray) nbt).getIntArray()));
+      return map;
+    } else if (nbt instanceof NBTTagList) {
+      HashMap<Integer, Object> content = new HashMap<>();
+      int i = 1;
+      for (Object object : ((NBTTagList) nbt)) {
+        if (object instanceof NBTBase) {
+          content.put(i, ItemIdentifier.getNBTBaseAsMap((NBTBase) object));
+        }
+        i++;
+      }
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagList");
+      map.put("value", content);
+      return map;
+    } else if (nbt instanceof NBTTagCompound) {
+      HashMap<Object, Object> content = new HashMap<>();
+      HashMap<Integer, Object> keys = new HashMap<>();
+      int i = 1;
+      for (String key : ((NBTTagCompound) nbt).getKeySet()) {
+        NBTBase value = ((NBTTagCompound) nbt).getTag(key);
+        content.put(key, ItemIdentifier.getNBTBaseAsMap(value));
+        keys.put(i, key);
+        i++;
+      }
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagCompound");
+      map.put("value", content);
+      map.put("keys", keys);
+      return map;
+    } else if (nbt instanceof NBTTagLong) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagLong");
+      map.put("value", ((NBTTagLong) nbt).getLong());
+      return map;
+    } else if (nbt instanceof NBTTagShort) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagShort");
+      map.put("value", ((NBTTagShort) nbt).getShort());
+      return map;
+    } else if (nbt instanceof NBTTagString) {
+      HashMap<Object, Object> map = new HashMap<>();
+      map.put("type", "NBTTagString");
+      map.put("value", ((NBTTagString) nbt).getString());
+      return map;
+    } else {
+      throw new UnsupportedOperationException("Unsupported NBTBase of type:" + nbt.getClass().getName());
+    }
+  }*//*
 
 
   @Override

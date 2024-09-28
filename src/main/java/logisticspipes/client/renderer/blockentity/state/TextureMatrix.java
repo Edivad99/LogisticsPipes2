@@ -109,4 +109,3 @@ public class TextureMatrix {
     dirty = false;
   }
 }
-

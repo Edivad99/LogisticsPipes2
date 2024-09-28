@@ -5,7 +5,6 @@ import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.api.ILPPipe;
 import logisticspipes.interfaces.ILevelProvider;
-import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IPipeUpgradeManager;
 import logisticspipes.pipes.basic.debug.DebugLogController;
 import logisticspipes.pipes.basic.debug.StatusEntry;

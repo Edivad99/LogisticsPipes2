@@ -1,7 +1,6 @@
 package logisticspipes.logisticspipes;
 
 import org.jetbrains.annotations.Nullable;
-import logisticspipes.LogisticsPipes;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.ExitRoute;

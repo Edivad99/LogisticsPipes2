@@ -106,4 +106,3 @@ class DynamicAdjacent implements Adjacent {
         .collect(Collectors.joining(", ")) + ")";
   }
 }
-

@@ -3,7 +3,6 @@ package logisticspipes.network.to_client;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

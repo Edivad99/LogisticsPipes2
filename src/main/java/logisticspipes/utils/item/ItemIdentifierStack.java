@@ -1,18 +1,6 @@
 /*
 package logisticspipes.utils.item;
 
-import java.util.LinkedList;
-import javax.annotation.Nonnull;
-import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.pipes.basic.CoreRoutedPipe.ItemSendMode;
-import lombok.Getter;
-import lombok.Setter;
-import net.minecraft.core.Direction;
-import net.minecraft.world.Container;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import logisticspipes.utils.tuples
 
 //REPLACE WITH ITEMSTACK
 public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack> {

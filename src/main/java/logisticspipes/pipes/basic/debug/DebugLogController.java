@@ -2,7 +2,6 @@ package logisticspipes.pipes.basic.debug;
 
 import java.util.ArrayList;
 import java.util.List;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.utils.PlayerCollectionList;
 import net.minecraft.world.entity.player.Player;

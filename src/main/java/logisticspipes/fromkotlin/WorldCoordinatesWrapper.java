@@ -81,5 +81,3 @@ public class WorldCoordinatesWrapper {
     return "WorldCoordinatesWrapper(world=" + level + ", pos=" + pos + ")";
   }
 }
-
-

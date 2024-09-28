@@ -1,18 +1,14 @@
 package logisticspipes.world.level.block.entity;
 
-import java.awt.SecondaryLoop;
 import java.util.Arrays;
 import java.util.EnumMap;
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.client.renderer.LogisticsTileRenderController;
 import logisticspipes.client.renderer.blockentity.state.PipeRenderState;
 import logisticspipes.fromkotlin.PipeInventoryConnectionChecker;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.ItemInsertionHandler;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.transport.LPTravelingItem;

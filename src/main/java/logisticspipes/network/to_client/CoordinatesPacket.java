@@ -1,5 +1,6 @@
 package logisticspipes.network.to_client;
 
+import org.jetbrains.annotations.Nullable;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -52,6 +53,7 @@ public abstract class CoordinatesPacket implements CustomPacketPayload {
     }
   }
 
+  @Nullable
   private static BlockEntity getBlockEntity(Level level, BlockPos blockPos) {
     if (level == null) {
       throw new IllegalStateException("Level was null");

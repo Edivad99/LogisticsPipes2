@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import logisticspipes.routing.ExitRoute;
 
 public class OneList<E> implements List<E> {
 

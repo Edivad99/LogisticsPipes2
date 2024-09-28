@@ -84,4 +84,3 @@ class SingleAdjacent implements Adjacent {
     return "SingleAdjacent(" + dir.getName() + ": " + adjacentType + ")";
   }
 }
-

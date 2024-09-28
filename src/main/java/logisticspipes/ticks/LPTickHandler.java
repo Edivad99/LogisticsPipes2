@@ -72,4 +72,3 @@ public class LPTickHandler {
     private boolean skipBlockUpdateForWorld = false;
   }
 }
-

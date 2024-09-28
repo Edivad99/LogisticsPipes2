@@ -1,15 +1,12 @@
 package logisticspipes.client.renderer.blockentity.state;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import logisticspipes.utils.CoordinateUtils;
 import logisticspipes.utils.DoubleCoordinates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.LevelAccessor;
 
 public class PipeRenderState {

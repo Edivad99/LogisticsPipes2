@@ -1,6 +1,5 @@
 package logisticspipes.utils;
 
-import javax.annotation.Nonnull;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.transport.LPTravelingItem;

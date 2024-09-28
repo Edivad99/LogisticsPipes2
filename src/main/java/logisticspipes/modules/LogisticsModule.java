@@ -1,6 +1,5 @@
 package logisticspipes.modules;
 
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ILevelProvider;
