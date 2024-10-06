@@ -16,6 +16,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.routing.channels.ChannelConnection;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 public class RouterManager implements IChannelConnectionManager {
 
@@ -27,8 +28,8 @@ public class RouterManager implements IChannelConnectionManager {
   private final ArrayList<ChannelConnection> channelConnectedPipes = new ArrayList<>();
 
   @Nullable
-  public IRouter getRouter(Level level, int id) {
-    if (id <= 0 || level.isClientSide) {
+  public IRouter getRouter(/*Level level, */int id) {
+    if (id <= 0 || FMLEnvironment.dist.isClient()) {
       return null;
     } else {
       return this.routersServer.get(id);
@@ -119,7 +120,7 @@ public class RouterManager implements IChannelConnectionManager {
         map(channelConnection ->
             channelConnection.routers.stream()
                 .filter(r -> r != router.getSimpleID())
-                .map(id -> this.getRouter(level, id))
+                .map(id -> this.getRouter(/*level,*/ id))
                 .filter(Objects::nonNull)
                 .map(IRouter::getPipe)
                 .filter(Objects::nonNull)
@@ -169,7 +170,7 @@ public class RouterManager implements IChannelConnectionManager {
     IRouter r;
     int id = this.getIDForUUID(identifier);
     if (id > 0) {
-      getRouter(level, id); //TODO: Why?
+      getRouter(/*level, */id); //TODO: Why?
     }
     if (level.isClientSide) {
       synchronized (this.routersClient) {

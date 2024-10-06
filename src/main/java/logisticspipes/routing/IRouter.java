@@ -9,10 +9,10 @@ import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.DoubleCoordinates;
+import logisticspipes.utils.item.ItemIdentifier;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 public interface IRouter {
@@ -28,10 +28,10 @@ public interface IRouter {
 
   //int getDistanceToNextPowerPipe(Direction dir);
 
-  boolean hasRoute(int id, boolean active, Item item);
+  boolean hasRoute(int id, boolean active, ItemIdentifier item);
 
   @Nullable
-  ExitRoute getExitFor(int id, boolean active, Item type);
+  ExitRoute getExitFor(int id, boolean active, ItemIdentifier type);
 
   List<List<ExitRoute>> getRouteTable();
 

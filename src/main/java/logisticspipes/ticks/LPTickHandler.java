@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.MapMaker;
+import logisticspipes.grow.ServerTickDispatcher;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.DoubleCoordinates;
 import lombok.AccessLevel;
@@ -16,6 +17,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
+//TODO:MOVE
 public class LPTickHandler {
 
   public static int adjChecksDone = 0;
@@ -32,12 +34,10 @@ public class LPTickHandler {
   public void serverTick(ServerTickEvent.Post event) {
     //HudUpdateTick.tick();
     //SimpleServiceLocator.serverBufferHandler.serverTick();
-    if (event.getServer().isDedicatedServer()) {
-      MainProxy.addTick();
-    }
+    MainProxy.addTick();
     LPTickHandler.adjChecksDone = 0;
     //DebugGuiController.instance().execServer();
-    //ServerTickDispatcher.INSTANCE.tick();
+    ServerTickDispatcher.INSTANCE.tick();
   }
 
   private static final Map<Level, LPWorldInfo> LEVEL_INFO = new MapMaker().weakKeys().makeMap();

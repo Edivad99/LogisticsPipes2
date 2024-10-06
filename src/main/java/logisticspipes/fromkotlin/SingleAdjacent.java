@@ -8,12 +8,14 @@ import logisticspipes.logisticspipes.LPNeighborBlockEntity;
 import logisticspipes.logisticspipes.NeighborBlockEntity;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.ConnectionType;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-class SingleAdjacent implements Adjacent {
+public class SingleAdjacent implements Adjacent {
   private final CoreRoutedPipe parent;
+  @Getter
   private final Direction dir;
   private final ConnectionType adjacentType;
 

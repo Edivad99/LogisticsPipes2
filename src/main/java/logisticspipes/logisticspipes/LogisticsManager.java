@@ -9,6 +9,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.modules.LogisticsModule;
+import logisticspipes.particle.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.ExitRoute;
@@ -16,6 +17,8 @@ import logisticspipes.routing.IRouter;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.ServerRouter;
 import logisticspipes.utils.SinkReply;
+import logisticspipes.utils.item.ItemIdentifier;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Triplet;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +38,7 @@ public class LogisticsManager implements ILogisticsManager {
     //Wipe current destination
     item.clearDestination();
 
-    final ItemStack itemIdStack = item.getItemIdentifierStack();
+    final ItemIdentifierStack itemIdStack = item.getItemIdentifierStack();
     if (itemIdStack == null) {
       return item;
     }
@@ -52,7 +55,7 @@ public class LogisticsManager implements ILogisticsManager {
     }
 
     Collections.sort(validDestinations);
-    final ItemStack stack = itemIdStack.copy();
+    final ItemStack stack = itemIdStack.makeNormalStack();
     /*if (stack.getItem() instanceof LogisticsFluidContainer) {
       Pair<Integer, FluidSinkReply> bestReply = SimpleServiceLocator.logisticsFluidManager.getBestReply(SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(itemIdStack), sourceRouter, item.getJamList());
       if (bestReply != null) {
@@ -79,7 +82,7 @@ public class LogisticsManager implements ILogisticsManager {
   }
 
   private Triplet<Integer, SinkReply, List<IFilter>> getBestReply(ItemStack stack,
-      Item item, IRouter sourceRouter, List<ExitRoute> validDestinations,
+      ItemIdentifier item, IRouter sourceRouter, List<ExitRoute> validDestinations,
       boolean excludeSource, List<Integer> jamList, @Nullable Triplet<Integer, SinkReply, List<IFilter>> result,
       boolean allowDefault) {
     if (result == null) {
@@ -136,21 +139,21 @@ public class LogisticsManager implements ILogisticsManager {
       CoreRoutedPipe pipe =
           SimpleServiceLocator.routerManager.getServerRouter(result.getA()).getPipe();
       pipe.useEnergy(result.getB().energyUse);
-      //pipe.spawnParticle(Particles.BlueParticle, 10);
+      pipe.spawnParticle(Particles.BLUE_SPARKLE, 10);
     }
     return result;
   }
 
  @Nullable
   public static SinkReply canSink(ItemStack stack, IRouter destination,
-      @Nullable IRouter sourceRouter, boolean excludeSource, Item item, @Nullable SinkReply result,
+      @Nullable IRouter sourceRouter, boolean excludeSource, ItemIdentifier item, @Nullable SinkReply result,
       boolean activeRequest, boolean allowDefault) {
     return canSink(stack, destination, sourceRouter, excludeSource, item, result, activeRequest, allowDefault, true);
   }
 
   @Nullable
   public static SinkReply canSink(ItemStack stack, IRouter destination,
-      @Nullable IRouter sourceRouter, boolean excludeSource, Item item, @Nullable SinkReply result,
+      @Nullable IRouter sourceRouter, boolean excludeSource, ItemIdentifier item, @Nullable SinkReply result,
       boolean activeRequest, boolean allowDefault, boolean forcePassive) {
 
     SinkReply reply;

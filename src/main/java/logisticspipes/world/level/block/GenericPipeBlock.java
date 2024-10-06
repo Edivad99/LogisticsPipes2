@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
+import logisticspipes.interfaces.IRotationProvider;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.tags.LogisticsPipesTags;
 import logisticspipes.utils.DoubleCoordinates;
@@ -16,12 +17,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
@@ -33,7 +33,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.capabilities.Capabilities;
 
 public abstract class GenericPipeBlock extends BaseEntityBlock {
 
@@ -83,17 +82,6 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
   }
 
   @Override
-  public BlockState getStateForPlacement(BlockPlaceContext context) {
-    return getState(context.getLevel(), context.getClickedPos());
-  }
-
-  @Override
-  public BlockState updateShape(BlockState stateIn, Direction facing, BlockState facingState,
-      LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
-    return getState(level, currentPos);
-  }
-
-  @Override
   public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
       BlockPos fromPos, boolean isMoving) {
     super.neighborChanged(state, level, pos, block, fromPos, isMoving);
@@ -102,59 +90,37 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
     if (GenericPipeBlock.isValid(pipe)) {
       pipe.container.scheduleNeighborChange();
     }
-    level.setBlockAndUpdate(pos, getState(level, pos));
-  }
-
-  private BlockState getState(LevelAccessor level, BlockPos pos) {
-    boolean isConnectToNorth = checkBlock(level, pos.north(), Direction.NORTH);
-    boolean isConnectToEast = checkBlock(level, pos.east(), Direction.EAST);
-    boolean isConnectToSouth = checkBlock(level, pos.south(), Direction.SOUTH);
-    boolean isConnectToWest = checkBlock(level, pos.west(), Direction.WEST);
-    boolean isConnectToUp = checkBlock(level, pos.above(), Direction.UP);
-    boolean isConnectToDown = checkBlock(level, pos.below(), Direction.DOWN);
-
-    return defaultBlockState()
-        .setValue(CONNECTION.get(Direction.NORTH), isConnectToNorth)
-        .setValue(CONNECTION.get(Direction.EAST), isConnectToEast)
-        .setValue(CONNECTION.get(Direction.SOUTH), isConnectToSouth)
-        .setValue(CONNECTION.get(Direction.WEST), isConnectToWest)
-        .setValue(CONNECTION.get(Direction.UP), isConnectToUp)
-        .setValue(CONNECTION.get(Direction.DOWN), isConnectToDown);
-  }
-
-  private boolean checkBlock(LevelAccessor levelAccessor, BlockPos pos, Direction direction) {
-    if (levelAccessor.getBlockState(pos).getBlock() instanceof GenericPipeBlock) {
-      return true;
-    }
-    if (levelAccessor instanceof Level level) {
-      return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null) != null;
-    }
-    return false;
-    //return block instanceof GenericPipeBlock || block instanceof ChestBlock;
   }
 
   @Override
-  protected RenderShape getRenderShape(BlockState state) {
-    return RenderShape.MODEL;
-  }
+  public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+    // This is called before onPlace, this is called on both sides
+    super.setPlacedBy(level, pos, state, placer, stack);
+    CoreUnroutedPipe pipe = GenericPipeBlock.getPipe(level, pos);
 
-  @Override
-  protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,
-      boolean movedByPiston) {
-    super.onPlace(state, level, pos, oldState, movedByPiston);
-    if (level instanceof ServerLevel) {
-      var blockEntity = level.getBlockEntity(pos);
-      if (blockEntity instanceof LogisticsGenericPipeBlockEntity<?> blockEntityPipe) {
-        blockEntityPipe.initialize();
+    if (GenericPipeBlock.isValid(pipe)) {
+      pipe.onBlockPlaced();
+      pipe.onBlockPlacedBy(placer);
+      if (pipe instanceof IRotationProvider rotationProvider && placer != null) {
+        rotationProvider.setFacing(placer.getDirection().getOpposite());
       }
     }
   }
 
   @Override
-  protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
+  protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,
       boolean movedByPiston) {
-    GenericPipeBlock.removePipe(GenericPipeBlock.getPipe(level, pos));
-    super.onRemove(state, level, pos, newState, movedByPiston);
+    // This is called after setPlacedBy, this is called server side only
+    super.onPlace(state, level, pos, oldState, movedByPiston);
+    if (level instanceof ServerLevel) {
+      if (level.getBlockEntity(pos) instanceof LogisticsGenericPipeBlockEntity<?> blockEntity) {
+        blockEntity.initialize();
+        for (var side : Direction.values()) {
+          state = state.setValue(CONNECTION.get(side), blockEntity.isPipeConnectedCached(side));
+        }
+        level.setBlockAndUpdate(pos, state);
+      }
+    }
   }
 
   @Override
@@ -168,6 +134,18 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
       }
     }
     return ItemInteractionResult.sidedSuccess(level.isClientSide());
+  }
+
+  @Override
+  protected RenderShape getRenderShape(BlockState state) {
+    return RenderShape.MODEL;
+  }
+
+  @Override
+  protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
+      boolean movedByPiston) {
+    GenericPipeBlock.removePipe(GenericPipeBlock.getPipe(level, pos));
+    super.onRemove(state, level, pos, newState, movedByPiston);
   }
 
   @Nullable
@@ -208,31 +186,6 @@ public abstract class GenericPipeBlock extends BaseEntityBlock {
       GenericPipeBlock.PIPE_REMOVED.clear();
       //GenericPipeBlock.pipeSubMultiRemoved.clear();
     }
-
-    /*if (pipe.isMultiBlock()) {
-      if (pipe.preventRemove()) {
-        throw new UnsupportedOperationException("A multi block can't be protected against removal.");
-      }
-      LPPositionSet<DoubleCoordinatesType<CoreMultiBlockPipe.SubBlockTypeForShare>> list = ((CoreMultiBlockPipe) pipe).getRotatedSubBlocks();
-      list.forEach(pos -> pos.add(new DoubleCoordinates(pipe)));
-      for (DoubleCoordinates pos : pipe.container.subMultiBlock) {
-        TileEntity tile = pos.getTileEntity(level);
-        if (tile instanceof LogisticsTileGenericSubMultiBlock) {
-          DoubleCoordinatesType<CoreMultiBlockPipe.SubBlockTypeForShare> equ = list.findClosest(pos);
-          if (equ != null) {
-            ((LogisticsTileGenericSubMultiBlock) tile).removeSubType(equ.getType());
-          }
-          if (((LogisticsTileGenericSubMultiBlock) tile).removeMainPipe(new DoubleCoordinates(pipe))) {
-            LogisticsBlockGenericSubMultiBlock.redirectedToMainPipe = true;
-            pos.setBlockToAir(level);
-            LogisticsBlockGenericSubMultiBlock.redirectedToMainPipe = false;
-            LogisticsBlockGenericPipe.pipeSubMultiRemoved.put(new DoubleCoordinates(pos), pipe.container.getPos());
-          } else {
-            MainProxy.sendPacketToAllWatchingChunk(tile, ((LogisticsTileGenericSubMultiBlock) tile).getLPDescriptionPacket());
-          }
-        }
-      }
-    }*/
 
     BlockPos pos = pipe.container.getBlockPos();
     GenericPipeBlock.PIPE_REMOVED.put(new DoubleCoordinates(pos), pipe);

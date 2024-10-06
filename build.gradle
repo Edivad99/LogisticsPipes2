@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 import java.util.regex.Matcher
 import static org.apache.commons.lang3.StringUtils.repeat
 
@@ -7,6 +9,8 @@ plugins {
   id 'idea'
   id 'net.neoforged.gradle.userdev' version "$neo_gradle_version"
   id 'com.diffplug.spotless' version '6.25.0'
+  id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
+  id 'org.jetbrains.kotlin.plugin.lombok' version "$kotlin_version"
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -29,6 +33,14 @@ java {
   }
 }
 
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        languageVersion = "2.0"
+        jvmTarget = JavaVersion.VERSION_21
+        freeCompilerArgs += "-Xjvm-default=all"
+    }
+}
+
 println(repeat('*', 60))
 println("Project Version: $version")
 println("Java: ${System.getProperty('java.version')}")
@@ -45,6 +57,11 @@ sourceSets {
   }
 }
 
+configurations {
+    libraries
+    implementation.extendsFrom libraries
+}
+
 runs {
   configureEach {
     systemProperty 'forge.logging.console.level', 'debug'
@@ -53,6 +70,9 @@ runs {
 
     if (System.getProperty('idea.active')) {
       jvmArguments.add("-XX:+AllowEnhancedClassRedefinition")
+    }
+    dependencies {
+      runtime project.configurations.libraries
     }
   }
 
@@ -83,6 +103,9 @@ configurations {
 dependencies {
   implementation group: 'net.neoforged', name: 'neoforge', version: neo_version
 
+  libraries "org.jetbrains.kotlin:kotlin-stdlib:2.0.20"
+  libraries "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
+
   compileOnly "org.projectlombok:lombok:$lombok_version"
   annotationProcessor "org.projectlombok:lombok:$lombok_version"
 
@@ -91,6 +114,10 @@ dependencies {
   localRuntime "mezz.jei:jei-$minecraft_version-neoforge:$jei_version"
 
   implementation "curse.maven:mekanism-268560:5680395"
+}
+
+kotlinLombok {
+    lombokConfigurationFile file("lombok.config")
 }
 
 spotless {
@@ -106,7 +133,7 @@ spotless {
       if (fileContents.contains('*;\n')) {
         throw new GradleException('No wildcard imports are allowed!')
       }
-    }
+    } as Closure<String>
     bumpThisNumberIfACustomStepChanges(1)
   }
 }

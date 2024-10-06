@@ -10,12 +10,12 @@ import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.DoubleCoordinates;
+import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 public class ClientRouter implements IRouter {
@@ -89,7 +89,7 @@ public class ClientRouter implements IRouter {
   }
 
   @Override
-  public boolean hasRoute(int id, boolean active, Item item) {
+  public boolean hasRoute(int id, boolean active, ItemIdentifier item) {
     if (LogisticsPipes.isDebug()) {
       throw new UnsupportedOperationException("noClientRouting");
     }
@@ -97,7 +97,7 @@ public class ClientRouter implements IRouter {
   }
 
   @Override
-  public ExitRoute getExitFor(int id, boolean active, Item item) {
+  public ExitRoute getExitFor(int id, boolean active, ItemIdentifier item) {
     if (LogisticsPipes.isDebug()) {
       throw new UnsupportedOperationException("noClientRouting");
     }

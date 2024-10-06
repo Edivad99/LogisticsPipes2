@@ -1,8 +1,5 @@
 package logisticspipes.logisticspipes;
 
-import org.jetbrains.annotations.Nullable;
-import logisticspipes.interfaces.IInventoryUtil;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,11 +23,6 @@ public class LPNeighborBlockEntity<T extends BlockEntity> extends NeighborBlockE
   @Override
   public boolean canHandleFluids() {
     return false;
-  }
-
-  @Nullable
-  public IInventoryUtil getInventoryUtil() {
-    return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(getBlockEntity(), getOurDirection());
   }
 
   /*@Nullable

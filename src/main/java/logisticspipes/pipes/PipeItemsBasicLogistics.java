@@ -1,10 +1,12 @@
 package logisticspipes.pipes;
 
+import java.util.Collection;
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleItemSink;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.transport.PipeTransportLogistics;
+import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -56,5 +58,12 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
   @Override
   public boolean hasGenericInterests() {
     return this.module.isDefaultRoute();
+  }
+
+  @Override
+  public void collectSpecificInterests(Collection<ItemIdentifier> itemIdentifiers) {
+    if (!this.module.isDefaultRoute()) {
+      this.module.collectSpecificInterests(itemIdentifiers);
+    }
   }
 }

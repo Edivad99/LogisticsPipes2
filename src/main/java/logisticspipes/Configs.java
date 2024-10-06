@@ -1,11 +1,13 @@
 package logisticspipes;
 
+import net.minecraft.SharedConstants;
+
 public class Configs {
 
   // Configurable
   public static int LOGISTICS_DETECTION_LENGTH = 50;
   public static int LOGISTICS_DETECTION_COUNT = 100;
-  public static int LOGISTICS_DETECTION_FREQUENCY = 20 * 30;
+  public static int LOGISTICS_DETECTION_FREQUENCY = SharedConstants.TICKS_PER_SECOND * 30;
   public static boolean LOGISTICS_ORDERER_COUNT_INVERTWHEEL = false;
   public static boolean LOGISTICS_ORDERER_PAGE_INVERTWHEEL = false;
   public static final float LOGISTICS_ROUTED_SPEED_MULTIPLIER = 20F;

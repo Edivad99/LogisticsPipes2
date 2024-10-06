@@ -1,7 +1,7 @@
 package logisticspipes.world.level.block.entity;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.pipes.PipeItemsBasicLogistics;
+import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.world.inventory.ChassiPipeMenu;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -16,13 +16,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class ChassiPipeBlockEntity extends LogisticsGenericPipeBlockEntity<PipeItemsBasicLogistics> implements MenuProvider {
+public class ChassiPipeBlockEntity extends LogisticsGenericPipeBlockEntity<PipeLogisticsChassis> implements MenuProvider {
 
   @Getter
   private final SimpleContainer container = new SimpleContainer(2);
 
   public ChassiPipeBlockEntity(BlockPos pos, BlockState blockState) {
-    super(LogisticsPipesBlockEntityTypes.CHASSI_MK2.get(), pos, blockState, new PipeItemsBasicLogistics());
+    super(LogisticsPipesBlockEntityTypes.CHASSI_MK2.get(), pos, blockState, new PipeLogisticsChassis());
     this.container.addListener(__ -> this.setChanged());
   }
 

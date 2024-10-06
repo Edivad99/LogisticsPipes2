@@ -29,7 +29,7 @@ public class PipeTransportLayer extends TransportLayer {
   @Override
   public Direction itemArrived(IRoutedItem item, @Nullable Direction denied) {
     if (item.getItemIdentifierStack() != null) {
-      this.trackStatistics.receivedItem(item.getItemIdentifierStack().getCount());
+      this.trackStatistics.receivedItem(item.getItemIdentifierStack().getStackSize());
     }
 
     // 1st priority, deliver to adjacent inventories

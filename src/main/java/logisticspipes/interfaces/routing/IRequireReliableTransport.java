@@ -1,10 +1,10 @@
 package logisticspipes.interfaces.routing;
 
-import net.minecraft.world.item.ItemStack;
+import logisticspipes.utils.item.ItemIdentifierStack;
 
 public interface IRequireReliableTransport {
 
-  void itemLost(ItemStack itemStack, IAdditionalTargetInformation targetInfo);
+  void itemLost(ItemIdentifierStack itemStack, IAdditionalTargetInformation targetInfo);
 
-  void itemArrived(ItemStack item, IAdditionalTargetInformation targetInfo);
+  void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation targetInfo);
 }

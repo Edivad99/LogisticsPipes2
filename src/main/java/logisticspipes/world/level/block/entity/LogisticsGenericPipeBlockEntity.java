@@ -4,15 +4,14 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.client.renderer.LogisticsTileRenderController;
-import logisticspipes.client.renderer.blockentity.state.PipeRenderState;
 import logisticspipes.fromkotlin.PipeInventoryConnectionChecker;
+import logisticspipes.network.to_client.PipeBlockEntityStatePacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.ItemInsertionHandler;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.transport.LPTravelingItem;
-import logisticspipes.utils.ConnectionType;
 import logisticspipes.utils.TileBuffer;
 import logisticspipes.world.level.block.GenericPipeBlock;
 import lombok.Getter;
@@ -23,12 +22,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe> extends BlockEntity implements
     IPipeInformationProvider {
@@ -36,10 +37,10 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
   public static PipeInventoryConnectionChecker pipeInventoryConnectionChecker = new PipeInventoryConnectionChecker();
 
   public T pipe;
+  public int statePacketId = 0;
   @Getter
   private final LogisticsTileRenderController<T> renderController;
   public boolean[] pipeConnectionsBuffer = new boolean[6];
-  public final PipeRenderState renderState;
   private boolean addedToNetwork = false;
   private boolean sendInitPacket = true;
   @Getter
@@ -49,7 +50,6 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
   private TileBuffer[] tileBuffer = null;
   private boolean sendClientUpdate = false;
   private boolean blockNeighborChange = false;
-  private boolean refreshRenderState = false;
   private boolean pipeBound = false;
 
   private final EnumMap<Direction, ItemInsertionHandler<T>> itemInsertionHandlers;
@@ -58,8 +58,8 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
       BlockState blockState, T pipe) {
     super(type, pos, blockState);
     this.pipe = pipe;
+    this.pipe.setBlockEntity(this);
     this.renderController = new LogisticsTileRenderController<>(this);
-    this.renderState = new PipeRenderState();
     this.itemInsertionHandlers = new EnumMap<>(Direction.class);
     Arrays.stream(Direction.values())
         .forEach(face -> itemInsertionHandlers.put(face, new ItemInsertionHandler<>(this, face)));
@@ -74,7 +74,9 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
   @Override
   protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
     super.loadAdditional(tag, registries);
+    this.bindPipe();
     this.pipe.loadAdditional(tag, registries);
+    this.pipe.finishInit();
   }
 
   @Override
@@ -84,8 +86,7 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
 
   public void initialize() {
     this.bindPipe();
-    //this.computeConnections();
-    this.scheduleRenderUpdate();
+    this.computeConnections();
 
     if (this.pipe.needsInit()) {
       this.pipe.initialize();
@@ -238,17 +239,23 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
 
   public boolean isPipeConnectedCached(Direction side) {
     if (this.level.isClientSide) {
-      return renderState.pipeConnectionMatrix.isConnected(side);
+      return this.level.getBlockState(getBlockPos()).getValue(GenericPipeBlock.CONNECTION.get(side));
     } else {
       return pipeConnectionsBuffer[side.ordinal()];
     }
   }
 
   private void bindPipe() {
-    if (!this.pipeBound && this.pipe != null) {
-      //pipe.setTile(this);
+    if (!this.pipeBound) {
+      this.pipe.setBlockEntity(this);
       this.pipeBound = true;
     }
+  }
+
+  public PipeBlockEntityStatePacket getLPDescriptionPacket() {
+    this.bindPipe();
+    return new PipeBlockEntityStatePacket(
+        this.getBlockPos(), ++this.statePacketId, this.pipe);
   }
 
   public boolean canPipeConnect(@Nullable BlockEntity with, Direction direction) {
@@ -278,11 +285,6 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
     return pipe.canPipeConnect(with, direction);
   }
 
-  @Override
-  public boolean isCorrect(ConnectionType connectionType) {
-    return true;
-  }
-
   public boolean isStillValid(Player player) {
     return isStillValid(this, player, 64);
   }
@@ -298,10 +300,6 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
   @Override
   public final CompoundTag getUpdateTag(HolderLookup.Provider provider) {
     return this.saveWithoutMetadata(provider);
-  }
-
-  public void scheduleRenderUpdate() {
-    this.refreshRenderState = true;
   }
 
   public void scheduleNeighborChange() {
@@ -329,6 +327,7 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
     */
     if (blockEntity.sendInitPacket && !level.isClientSide) {
       blockEntity.sendInitPacket = false;
+      blockEntity.sendClientUpdate = true;
       blockEntity.getRenderController().sendInit();
     }
     if (level instanceof ServerLevel) {
@@ -348,7 +347,7 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
 
     blockEntity.pipe.updateEntity();
 
-    if (level.isClientSide) {
+    if (!(level instanceof ServerLevel serverLevel)) {
       //debug.end();
       return;
     }
@@ -357,31 +356,21 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
       blockEntity.computeConnections();
       blockEntity.pipe.onNeighborBlockChange();
       blockEntity.blockNeighborChange = false;
-      blockEntity.refreshRenderState = true;
 
-      if (level instanceof ServerLevel) {
-        /*MainProxy.sendPacketToAllWatchingChunk(blockEntity,
-            PacketHandler.getPacket(PipeSolidSideCheck.class).setTilePos(blockEntity));*/
+      for (var side : Direction.values()) {
+        blockState = blockState.setValue(GenericPipeBlock.CONNECTION.get(side),
+            blockEntity.isPipeConnectedCached(side));
       }
+      level.setBlockAndUpdate(blockPos, blockState);
     }
 
     //Sideblocks need to be checked before this
     //Network needs to be after this
 
-    if (blockEntity.refreshRenderState) {
-      blockEntity.refreshRenderState();
-
-      if (blockEntity.renderState.isDirty()) {
-        blockEntity.renderState.clean();
-        blockEntity.sendUpdateToClient();
-      }
-
-      blockEntity.refreshRenderState = false;
-    }
-
     if (blockEntity.sendClientUpdate) {
       blockEntity.sendClientUpdate = false;
-      //MainProxy.sendPacketToAllWatchingChunk(blockEntity, getLPDescriptionPacket());
+      PacketDistributor.sendToPlayersTrackingChunk(serverLevel,
+          new ChunkPos(blockPos), blockEntity.getLPDescriptionPacket());
     }
 
     blockEntity.getRenderController().onUpdate();
@@ -400,26 +389,7 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
     for (Direction side : Direction.values()) {
       TileBuffer t = cache[side.ordinal()];
       t.refresh();
-
       pipeConnectionsBuffer[side.ordinal()] = canPipeConnect(t.getBlockEntity(), side);
     }
-  }
-
-  private void refreshRenderState() {
-    // Pipe connections;
-    for (Direction o : Direction.values()) {
-      renderState.pipeConnectionMatrix.setConnected(o, pipeConnectionsBuffer[o.ordinal()]);
-    }
-    // Pipe Textures
-    for (int i = 0; i < 7; i++) {
-      Direction o = Direction.from3DDataValue(i);
-      //renderState.textureMatrix.setIconIndex(o, pipe.getIconIndex(o));
-    }
-    //New Pipe Texture States
-    renderState.textureMatrix.refreshStates(pipe);
-  }
-
-  public void sendUpdateToClient() {
-    this.sendClientUpdate = true;
   }
 }

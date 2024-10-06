@@ -20,6 +20,7 @@ public class DebugLogController {
   }
 
   public void log(String info) {
+    System.out.println(info);
     if (players.isEmptyWithoutCheck()) {
       return;
     }

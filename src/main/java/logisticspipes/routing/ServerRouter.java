@@ -31,6 +31,7 @@ import logisticspipes.asm.te.LPTileEntityObject;
 import logisticspipes.interfaces.IRoutingDebugAdapter;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.IFilter;
+import logisticspipes.particle.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -40,13 +41,13 @@ import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.DoubleCoordinates;
 import logisticspipes.utils.OneList;
+import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import oshi.util.tuples.Quartet;
 
@@ -61,14 +62,14 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   protected static LSA[] SharedLSADatabase = new LSA[0];
 
   // things with specific interests -- providers (including crafters)
-  private static final ConcurrentHashMap<Item, TreeSet<ServerRouter>> globalSpecificInterests = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<ItemIdentifier, TreeSet<ServerRouter>> globalSpecificInterests = new ConcurrentHashMap<>();
 
   // things potentially interested in every item (chassi with generic sinks)
   private static TreeSet<ServerRouter> genericInterests = new TreeSet<>();
   private static final Lock genericInterestsWLock = new ReentrantLock();
 
   // things this pipe is interested in (either providing or sinking)
-  private TreeSet<Item> interests = new TreeSet<>();
+  private TreeSet<ItemIdentifier> interests = new TreeSet<>();
   private final Lock interestsRWLock = new ReentrantLock();
 
   static int iterated = 0;// used pseudp-random to spread items over the tick range
@@ -105,11 +106,11 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   private List<List<ExitRoute>> routeTable = Collections.unmodifiableList(new ArrayList<>());
   private List<ExitRoute> routeCosts = Collections.unmodifiableList(new ArrayList<>());
   private final LinkedList<Tuple<Integer, IRouterQueuedTask>> queue = new LinkedList<>();
-  private int connectionNeedsChecking;
+  int connectionNeedsChecking;
   private final List<DoubleCoordinates> causedBy = new LinkedList<>();
   public List<Tuple<ILogisticsPowerProvider, List<IFilter>>> LPPowerTable = Collections.unmodifiableList(new ArrayList<>());
   public List<Tuple<ISubSystemPowerProvider, List<IFilter>>> SubSystemPowerTable = Collections.unmodifiableList(new ArrayList<>());
-  private int LSAVersion = 0;
+  protected int LSAVersion = 0;
   int ticksUntilNextInventoryCheck = 0;
 
   private EnumMap<Direction, Integer> subPowerExits = new EnumMap<>(Direction.class);
@@ -245,7 +246,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     this.myPipeCache = null;
   }
 
-  public static BitSet getRoutersInterestedIn(@Nullable Item item) {
+  public static BitSet getRoutersInterestedIn(@Nullable ItemIdentifier item) {
     final BitSet s = new BitSet(ServerRouter.getBiggestSimpleID() + 1);
     for (IRouter r : ServerRouter.genericInterests) {
       s.set(r.getSimpleID());
@@ -259,7 +260,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     return s;
   }
 
-  private static void setBitsForItemInterests(final BitSet bitset, final Item itemid) {
+  private static void setBitsForItemInterests(final BitSet bitset, final ItemIdentifier itemid) {
     TreeSet<ServerRouter> specifics = ServerRouter.globalSpecificInterests.get(itemid);
     if (specifics != null) {
       for (IRouter r : specifics) {
@@ -331,7 +332,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
         info.end();
       }
       */
-      //getPipe().spawnParticle(Particles.LightRedParticle, 5);
+      getPipe().spawnParticle(Particles.LIGHT_RED_SPARKLE, 5);
     }
 
     LPTickHandler.adjChecksDone++;
@@ -594,7 +595,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     } else {
       removeGenericInterest();
     }
-    TreeSet<Item> newInterests = new TreeSet<>();
+    TreeSet<ItemIdentifier> newInterests = new TreeSet<>();
     pipe.collectSpecificInterests(newInterests);
 
     interestsRWLock.lock();
@@ -659,7 +660,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @Override
-  public boolean hasRoute(int id, boolean active, Item item) {
+  public boolean hasRoute(int id, boolean active, ItemIdentifier item) {
     if (!SimpleServiceLocator.routerManager.isRouterUnsafe(id, false, this.level)) {
       return false;
     }
@@ -693,7 +694,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @Override
-  public ExitRoute getExitFor(int id, boolean active, Item type) {
+  public ExitRoute getExitFor(int id, boolean active, ItemIdentifier type) {
     ensureLatestRoutingTable();
     if (getRouteTable().size() <= id || getRouteTable().get(id) == null) {
       return null;
@@ -732,7 +733,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @SuppressWarnings("unchecked")
-  private void addGlobalInterest(Item itemid) {
+  private void addGlobalInterest(ItemIdentifier itemid) {
     ServerRouter.globalSpecificInterests.compute(itemid, (unused, serverRouters) -> {
       final TreeSet<ServerRouter> newServerRouters = serverRouters == null ? new TreeSet<>() : (TreeSet<ServerRouter>) serverRouters.clone();
       newServerRouters.add(this);
@@ -767,7 +768,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @SuppressWarnings("unchecked")
-  private void removeGlobalInterest(Item item) {
+  private void removeGlobalInterest(ItemIdentifier item) {
     ServerRouter.globalSpecificInterests.computeIfPresent(item, (unused, serverRouters) -> {
       if (serverRouters.equals(ObjectSets.singleton(this))) {
         return null;
@@ -1148,8 +1149,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
       routingTableUpdateWriteLock.unlock();
     }
     if (getCachedPipe() != null) {
-      System.out.println("Spawning particles");
-      //getCachedPipe().spawnParticle(Particles.LightGreenParticle, 5);
+      getCachedPipe().spawnParticle(Particles.LIGHT_GREEN_SPARKLE, 5);
     }
 
     debug.done();
@@ -1157,8 +1157,9 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
   public void flagForRoutingUpdate() {
     this.LSAVersion++;
-    //if(LogisticsPipes.DEBUG)
-    //System.out.println("[LogisticsPipes] targeted for routing update to "+_LSAVersion+" for Node" +  simpleID);
+    if(LogisticsPipes.isDebug()) {
+      LogisticsPipes.LOG.debug("Targeted for routing update to {} for Node {}", LSAVersion, simpleID);
+    }
   }
 
 

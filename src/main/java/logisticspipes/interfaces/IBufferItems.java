@@ -1,7 +1,7 @@
 package logisticspipes.interfaces;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import net.minecraft.world.item.ItemStack;
+import logisticspipes.utils.item.ItemIdentifierStack;
 
 public interface IBufferItems {
 
@@ -11,5 +11,5 @@ public interface IBufferItems {
    * @param info  Additional Target Information
    * @return amount of items NOT added to the buffer
    */
-  int addToBuffer(ItemStack stack, IAdditionalTargetInformation info);
+  int addToBuffer(ItemIdentifierStack stack, IAdditionalTargetInformation info);
 }

@@ -1,5 +1,6 @@
 package logisticspipes.transport;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -14,10 +15,15 @@ import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.interfaces.IBufferItems;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ISlotUpgradeManager;
+import logisticspipes.interfaces.ISpecialInsertion;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
+import logisticspipes.interfaces.routing.ITargetSlotInformation;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.to_client.ItemBufferSyncPacket;
+import logisticspipes.network.to_client.PipeContentPacket;
+import logisticspipes.network.to_client.PipePositionPacket;
+import logisticspipes.network.to_server.PipeContentRequest;
 import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
@@ -31,6 +37,7 @@ import logisticspipes.utils.DoubleCoordinates;
 import logisticspipes.utils.InventoryHelper;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.SyncList;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Triplet;
 import logisticspipes.world.level.block.entity.ChassiPipeBlockEntity;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
@@ -40,6 +47,8 @@ import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -48,6 +57,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class PipeTransportLogistics {
 
@@ -62,7 +72,7 @@ public class PipeTransportLogistics {
   private static final int MAX_DESTINATION_UNREACHABLE_BUFFER = 30;
 
   private final int bufferTimeOut = 20 * 2; // 2 Seconds
-  public final SyncList<Triplet<ItemStack, Tuple<Integer /* Time */, Integer /* BufferCounter */>, LPTravelingItem.LPTravelingItemServer>> itemBuffer = new SyncList<>();
+  public final SyncList<Triplet<ItemIdentifierStack, Tuple<Integer /* Time */, Integer /* BufferCounter */>, LPTravelingItem.LPTravelingItemServer>> itemBuffer = new SyncList<>();
   @Nullable
   private LevelChunk chunk;
   public LPItemList items = new LPItemList(this);
@@ -77,7 +87,7 @@ public class PipeTransportLogistics {
 
   public void initialize() {
     if (this.getLevel() instanceof ServerLevel serverLevel) {
-      Objects.requireNonNull(this.container, "setTile must be called before initialize");
+      Objects.requireNonNull(this.container, "setBlockEntity must be called before initialize");
       this.chunk = this.getLevel().getChunkAt(this.container.getBlockPos());
       this.itemBuffer.setPacketType(
           new ItemBufferSyncPacket(container.getBlockPos(), new ArrayList<>()),
@@ -85,7 +95,7 @@ public class PipeTransportLogistics {
     }
   }
 
-  public void setTile(LogisticsGenericPipeBlockEntity<? extends CoreUnroutedPipe> blockEntity) {
+  public void setBlockEntity(LogisticsGenericPipeBlockEntity<? extends CoreUnroutedPipe> blockEntity) {
     this.container = blockEntity;
   }
 
@@ -118,14 +128,44 @@ public class PipeTransportLogistics {
 
   @Nullable
   public Level getLevel() {
-    Objects.requireNonNull(this.container, "setTile must be called before getLevel");
+    Objects.requireNonNull(this.container, "setBlockEntity must be called before getLevel");
     return this.container.getLevel();
   }
 
   public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    var tagsList1 = new ListTag();
+    for (var item : this.items) {
+      if (item instanceof LPTravelingItem.LPTravelingItemServer itemServer) {
+        var dataTag = new CompoundTag();
+        tagsList1.add(dataTag);
+        itemServer.writeToNBT(registries, dataTag);
+      }
+    }
+    tag.put("travelingEntities", tagsList1);
+
+    var tagList2 = new ListTag();
+    for (var stack : this.itemBuffer) {
+      var dataTag = new CompoundTag();
+      stack.getA().makeNormalStack().save(registries, dataTag);
+      tagList2.add(dataTag);
+    }
+    tag.put("buffercontents", tagList2);
   }
 
   public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    var tagsList1 = tag.getList("travelingEntities", Tag.TAG_COMPOUND);
+    for (int i = 0; i < tagsList1.size(); i++) {
+      var dataTag = tagsList1.getCompound(i);
+      var item = new LPTravelingItem.LPTravelingItemServer(registries, dataTag);
+      this.items.add(item);
+    }
+
+    var tagList2 = tag.getList("buffercontents", Tag.TAG_COMPOUND);
+    for (int i = 0; i < tagList2.size(); i++) {
+      var dataTag = tagList2.getCompound(i);
+      var stack = ItemIdentifierStack.parse(registries, dataTag);
+      this.itemBuffer.add(new Triplet<>(stack, new Tuple<>(this.bufferTimeOut, 0), null));
+    }
   }
 
   public void readjustSpeed(LPTravelingItem.LPTravelingItemServer item) {
@@ -136,18 +176,19 @@ public class PipeTransportLogistics {
     };
 
     if (isRouted) {
-      float multiplyerSpeed = 1.0F; /*+ (0.02F * getRoutedPipe().getUpgradeManager().getSpeedUpgradeCount());*/
-      float multiplyerPower = 1.0F; /*+ (0.03F * getRoutedPipe().getUpgradeManager().getSpeedUpgradeCount());*/
+      var speedUpgradeCount = getRoutedPipe().getUpgradeManager().getSpeedUpgradeCount();
+      float multiplayerPower = 1.0F + (0.03F * speedUpgradeCount);
+      float multiplayerSpeed = 1.0F + (0.02F * speedUpgradeCount);
 
-      float add = Math.max(item.getSpeed(), Constants.PIPE_NORMAL_SPEED * defaultBoost * multiplyerPower) - item.getSpeed();
+      float add = Math.max(item.getSpeed(), Constants.PIPE_NORMAL_SPEED * defaultBoost * multiplayerPower) - item.getSpeed();
       if (getRoutedPipe().useEnergy((int) (add * 50 + 0.5))) {
-        item.setSpeed(Math.min(Math.max(item.getSpeed(), Constants.PIPE_NORMAL_SPEED * defaultBoost * multiplyerSpeed), 1.0F));
+        item.setSpeed(Math.min(Math.max(item.getSpeed(), Constants.PIPE_NORMAL_SPEED * defaultBoost * multiplayerSpeed), 1.0F));
       }
     }
   }
 
   protected CoreUnroutedPipe getPipe() {
-    Objects.requireNonNull(this.container, "setTile must be called before getPipe");
+    Objects.requireNonNull(this.container, "setBlockEntity must be called before getPipe");
     return this.container.pipe;
   }
 
@@ -163,7 +204,7 @@ public class PipeTransportLogistics {
     if (getLevel() instanceof ServerLevel) {
       if (!this.itemBuffer.isEmpty()) {
         List<LPTravelingItem> toAdd = new LinkedList<>();
-        Iterator<Triplet<ItemStack, Tuple<Integer, Integer>, LPTravelingItem.LPTravelingItemServer>> iterator = this.itemBuffer.iterator();
+        var iterator = this.itemBuffer.iterator();
         while (iterator.hasNext()) {
           var next = iterator.next();
           int currentTimeOut = next.getB().getA();
@@ -229,7 +270,8 @@ public class PipeTransportLogistics {
     var iterator = this.itemBuffer.iterator();
     while (iterator.hasNext()) {
       var next = iterator.next().getA();
-      var item = new ItemEntity(getLevel(), getPipe().getX(), getPipe().getY(), getPipe().getZ(), next);
+      var item = new ItemEntity(getLevel(), getPipe().getX(), getPipe().getY(), getPipe().getZ(),
+          next.makeNormalStack());
       getLevel().addFreshEntity(item);
       iterator.remove();
     }
@@ -247,7 +289,7 @@ public class PipeTransportLogistics {
     }
     this.getPipe().triggerDebug();
 
-    int originalCount = item.getItemIdentifierStack().getCount();
+    int originalCount = item.getItemIdentifierStack().getStackSize();
 
     item.input = inputOrientation;
 
@@ -274,7 +316,7 @@ public class PipeTransportLogistics {
         this.sendItemPacket((LPTravelingItem.LPTravelingItemServer) item);
       }
     }
-    return originalCount - item.getItemIdentifierStack().getCount();
+    return originalCount - item.getItemIdentifierStack().getStackSize();
   }
 
   public int injectItem(IRoutedItem item, Direction inputOrientation) {
@@ -370,8 +412,7 @@ public class PipeTransportLogistics {
           }
           slotManager = getRoutedPipe().getUpgradeManager(slot, positionInt);
         }
-        /*if (arrivingItem.getAdditionalTargetInformation() instanceof ITargetSlotInformation) {
-          ITargetSlotInformation information = (ITargetSlotInformation) arrivingItem.getAdditionalTargetInformation();
+        if (arrivingItem.getAdditionalTargetInformation() instanceof ITargetSlotInformation information) {
           if (util instanceof ISpecialInsertion) {
             int slot = information.getTargetSlot();
             int amount = information.getAmount();
@@ -394,7 +435,7 @@ public class PipeTransportLogistics {
               return;
             }
           }
-        }*/
+        }
         // sneaky insertion
         if (!getRoutedPipe().getUpgradeManager().hasCombinedSneakyUpgrade() || slotManager.hasOwnSneakyUpgrade()) {
           Direction insertion = arrivingItem.output.getOpposite();
@@ -412,7 +453,7 @@ public class PipeTransportLogistics {
           }
         }
 
-        if (arrivingItem.getItemIdentifierStack().getCount() > 0) {
+        if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
           reverseItem(arrivingItem);
         }
         return;// the item is handled
@@ -438,11 +479,11 @@ public class PipeTransportLogistics {
    */
   private boolean insertArrivingItem(LPTravelingItem.LPTravelingItemServer arrivingItem,
       BlockEntity tile, Direction insertion) {
-    ItemStack added =
-        InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().copy(), insertion, true);
+    ItemStack added = InventoryHelper.getTransactorFor(tile, insertion)
+        .add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
 
     if (!added.isEmpty()) {
-      arrivingItem.getItemIdentifierStack().setCount(arrivingItem.getItemIdentifierStack().getCount() - added.getCount());
+      arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
       arrivingItem.setBufferCounter(0);
     }
 
@@ -453,9 +494,9 @@ public class PipeTransportLogistics {
       info = info.clone();
     }
     if(added.isEmpty()){
-      info.getItem().setCount(0);
+      info.getItem().setStackSize(0);
     } else {
-      info.getItem().setCount(added.getCount());
+      info.getItem().setStackSize(added.getCount());
     }
 
     inventorySystemConnectorHook(info, tile);
@@ -481,8 +522,7 @@ public class PipeTransportLogistics {
     }
 
     if (getPipe() instanceof IBufferItems buffer) {
-      item.getItemIdentifierStack()
-          .setCount(buffer.addToBuffer(item.getItemIdentifierStack(), item.getAdditionalTargetInformation()));
+      item.getItemIdentifierStack().setStackSize(buffer.addToBuffer(item.getItemIdentifierStack(), item.getAdditionalTargetInformation()));
       if (item.getItemIdentifierStack().isEmpty()) {
         return;
       }
@@ -584,7 +624,7 @@ public class PipeTransportLogistics {
     Direction blocked = null;
 
     if (data.getDestinationUUID() == null) {
-      ItemStack stack = data.getItemIdentifierStack();
+      ItemIdentifierStack stack = data.getItemIdentifierStack();
       ItemRoutingInformation result = getRoutedPipe().getQueuedForItemStack(stack);
       if (result != null) {
         data.setInformation(result);
@@ -594,7 +634,7 @@ public class PipeTransportLogistics {
     }
 
     if (data.getItemIdentifierStack() != null) {
-      getRoutedPipe().relayedItem(data.getItemIdentifierStack().getCount());
+      getRoutedPipe().relayedItem(data.getItemIdentifierStack().getStackSize());
     }
 
     if (data.getDestination() >= 0 &&
@@ -635,7 +675,7 @@ public class PipeTransportLogistics {
     return new RoutingResult(value, true);
   }
 
-  protected boolean isItemUnwanted(@Nullable ItemStack itemIdentifierStack) {
+  protected boolean isItemUnwanted(@Nullable ItemIdentifierStack itemIdentifierStack) {
     /*if (itemIdentifierStack != null &&
         itemIdentifierStack.getItem() instanceof IItemAdvancedExistance itemAdvancedExistance) {
       return !itemAdvancedExistance.canExistInNormalInventory(itemIdentifierStack.makeNormalStack());
@@ -648,6 +688,16 @@ public class PipeTransportLogistics {
   }
 
   private void sendItemPacket(LPTravelingItem.LPTravelingItemServer item) {
+    if (!LPTravelingItem.CLIENT_SIDE_KNOWN_IDS.get(item.getId())) {
+      PacketDistributor.sendToPlayersTrackingChunk((ServerLevel) container.getLevel(),
+          new ChunkPos(container.getBlockPos()),
+          new PipeContentPacket(item.getItemIdentifierStack(), item.getId()));
+      LPTravelingItem.CLIENT_SIDE_KNOWN_IDS.set(item.getId());
+    }
+    PacketDistributor.sendToPlayersTrackingChunk((ServerLevel) container.getLevel(),
+        new ChunkPos(container.getBlockPos()),
+        new PipePositionPacket(container.getBlockPos(),
+            item.getId(), item.getSpeed(), item.getPosition(), item.input, item.output, item.getYaw()));
     /*if (MainProxy.isAnyoneWatching(container.getPos(), getWorld().provider.getDimension())) {
       if (!LPTravelingItem.clientSideKnownIDs.get(item.getId())) {
         MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId())));
@@ -655,6 +705,38 @@ public class PipeTransportLogistics {
       }
       MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipePositionPacket.class).setSpeed(item.getSpeed()).setPosition(item.getPosition()).setInput(item.input).setOutput(item.output).setTravelId(item.getId()).setYaw(item.getYaw()).setTilePos(container)));
     }*/
+  }
+
+  public void handleItemPositionPacket(int travelId, Direction input, Direction output,
+      float speed, float position, float yaw) {
+    var ref = LPTravelingItem.CLIENT_LIST.get(travelId);
+    LPTravelingItem.LPTravelingItemClient item = null;
+    if (ref != null) {
+      item = ref.get();
+    }
+    if (item == null) {
+      sendItemContentRequest(travelId);
+      item = new LPTravelingItem.LPTravelingItemClient(travelId, position, input, output, yaw);
+      item.setSpeed(speed);
+      LPTravelingItem.CLIENT_LIST.put(travelId, new WeakReference<>(item));
+    } else {
+      if (item.getContainer() instanceof LogisticsGenericPipeBlockEntity<?> pipeBlockEntity) {
+        pipeBlockEntity.pipe.getTransport().items.scheduleRemoval(item);
+        pipeBlockEntity.pipe.getTransport().items.scheduleRemoval(item);
+        pipeBlockEntity.pipe.getTransport().items.removeScheduledItems();
+      }
+      item.updateInformation(input, output, speed, position, yaw);
+    }
+    //update lastTicked so we don't double-move items
+    item.lastTicked = MainProxy.getGlobalTick();
+    if (items.get(travelId) == null) {
+      items.add(item);
+    }
+    //getPipe().spawnParticle(Particles.OrangeParticle, 1);
+  }
+
+  private void sendItemContentRequest(int travelId) {
+    PacketDistributor.sendToServer(new PipeContentRequest(travelId));
   }
 
   @Nullable

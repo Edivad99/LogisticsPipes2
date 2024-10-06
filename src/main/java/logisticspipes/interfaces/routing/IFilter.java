@@ -2,13 +2,13 @@ package logisticspipes.interfaces.routing;
 
 import logisticspipes.request.resources.IResource;
 import logisticspipes.utils.DoubleCoordinates;
-import net.minecraft.world.item.Item;
+import logisticspipes.utils.item.ItemIdentifier;
 
 public interface IFilter {
 
   boolean isBlocked();
 
-  boolean isFilteredItem(Item item);
+  boolean isFilteredItem(ItemIdentifier item);
 
   boolean isFilteredItem(IResource resultItem);
 

@@ -38,4 +38,9 @@ public class ChassisModule extends LogisticsModule {
   public void tick() {
 
   }
+
+  @Override
+  public boolean hasGenericInterests() {
+    return false;
+  }
 }

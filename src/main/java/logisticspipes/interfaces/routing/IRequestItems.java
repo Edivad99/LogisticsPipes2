@@ -1,10 +1,10 @@
 package logisticspipes.interfaces.routing;
 
-import net.minecraft.world.item.ItemStack;
+import logisticspipes.utils.item.ItemIdentifierStack;
 
 public interface IRequestItems extends Comparable<IRequestItems>, IRequest {
 
-  void itemCouldNotBeSend(ItemStack item, IAdditionalTargetInformation info);
+  void itemCouldNotBeSend(ItemIdentifierStack item, IAdditionalTargetInformation info);
 
   default int compareTo(IRequestItems other) {
     return Integer.compare(this.getID(), other.getID());

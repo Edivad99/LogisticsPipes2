@@ -2,13 +2,16 @@ package logisticspipes.modules;
 
 import java.util.Arrays;
 import org.jetbrains.annotations.Nullable;
+import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.utils.SinkReply;
+import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.world.level.block.entity.ChassiPipeBlockEntity;
 import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 
@@ -33,6 +36,68 @@ public class ModuleItemSink extends LogisticsModule {
         new ChassiPipeBlockEntity.ChassiTargetInformation(this.getPositionInt()));
     this.sinkReplyDefault = new SinkReply(SinkReply.FixedPriority.DEFAULT_ROUTE, 0, true, true, 1, 0,
         new ChassiPipeBlockEntity.ChassiTargetInformation(this.getPositionInt()));
+  }
+
+  @Override
+  public @Nullable SinkReply sinksItem(ItemStack stack, ItemIdentifier item, int bestPriority,
+      int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+      boolean forcePassive) {
+    if (defaultRoute && !allowDefault) {
+      return null;
+    }
+    if (bestPriority > this.sinkReply.fixedPriority.ordinal() || (bestPriority == this.sinkReply.fixedPriority.ordinal()
+        && bestCustomPriority >= this.sinkReply.customPriority)) {
+      return null;
+    }
+    if (service == null) {
+      return null;
+    }
+    /*if (filterInventory.containsUndamagedItem(item.getUndamaged())) {
+      if (service.canUseEnergy(1)) {
+        return this.sinkReply;
+      }
+      return null;
+    }*/
+    final ISlotUpgradeManager upgradeManager = getUpgradeManager();
+    if (upgradeManager.isFuzzyUpgrade()) {
+      /*for (var filter : filterInventory.contents()) {
+        if (filter == null) {
+          continue;
+        }
+        if (filter.getValue1() == null) {
+          continue;
+        }
+        ItemIdentifier ident1 = item;
+        ItemIdentifier ident2 = filter.getValue1().getItem();
+        IBitSet slotFlags = getSlotFuzzyFlags(filter.getValue2());
+        if (FuzzyUtil.INSTANCE.get(slotFlags, FuzzyFlag.IGNORE_DAMAGE)) {
+          ident1 = ident1.getIgnoringData();
+          ident2 = ident2.getIgnoringData();
+        }
+        if (FuzzyUtil.INSTANCE.get(slotFlags, FuzzyFlag.IGNORE_NBT)) {
+          ident1 = ident1.getIgnoringNBT();
+          ident2 = ident2.getIgnoringNBT();
+        }
+        if (ident1.equals(ident2)) {
+          if (service.canUseEnergy(5)) {
+            return _sinkReply;
+          }
+          return null;
+        }
+      }*/
+    }
+    if (defaultRoute) {
+      if (bestPriority > this.sinkReplyDefault.fixedPriority.ordinal() || (
+          bestPriority == this.sinkReplyDefault.fixedPriority.ordinal()
+              && bestCustomPriority >= this.sinkReplyDefault.customPriority)) {
+        return null;
+      }
+      if (service.canUseEnergy(1)) {
+        return this.sinkReplyDefault;
+      }
+      return null;
+    }
+    return null;
   }
 
   @Override
@@ -93,5 +158,10 @@ public class ModuleItemSink extends LogisticsModule {
 
   @Override
   public void tick() {
+  }
+
+  @Override
+  public boolean hasGenericInterests() {
+    return this.defaultRoute;
   }
 }

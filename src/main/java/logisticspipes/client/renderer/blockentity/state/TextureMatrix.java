@@ -6,6 +6,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import lombok.Getter;
 import net.minecraft.core.Direction;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class TextureMatrix {
 
@@ -107,5 +108,46 @@ public class TextureMatrix {
 
   public void clean() {
     dirty = false;
+  }
+
+  public void writeData(FriendlyByteBuf buf) {
+    for (int i : iconIndexes) {
+      buf.writeVarInt(iconIndexes[i]);
+    }
+    buf.writeVarIntArray(iconIndexes);
+    buf.writeInt(textureIndex);
+    buf.writeBoolean(isRouted);
+    for (boolean b : isRoutedInDir) {
+      buf.writeBoolean(b);
+    }
+    for (boolean b : isSubPowerInDir) {
+      buf.writeBoolean(b);
+    }
+    buf.writeBoolean(hasPowerUpgrade);
+    buf.writeBoolean(hasPower);
+    buf.writeBoolean(isFluid);
+    buf.writeNullable(pointedOrientation, FriendlyByteBuf::writeEnum);
+  }
+
+  public void readData(FriendlyByteBuf buf) {
+    for (int i = 0; i < iconIndexes.length; i++) {
+      int icon = buf.readVarInt();
+      if (iconIndexes[i] != icon) {
+        iconIndexes[i] = icon;
+        dirty = true;
+      }
+    }
+    textureIndex = buf.readInt();
+    isRouted = buf.readBoolean();
+    for (int i = 0; i < isRoutedInDir.length; i++) {
+      isRoutedInDir[i] = buf.readBoolean();
+    }
+    for (int i = 0; i < isSubPowerInDir.length; i++) {
+      isSubPowerInDir[i] = buf.readBoolean();
+    }
+    hasPowerUpgrade = buf.readBoolean();
+    hasPower = buf.readBoolean();
+    isFluid = buf.readBoolean();
+    pointedOrientation = buf.readNullable(buffer -> buffer.readEnum(Direction.class));
   }
 }

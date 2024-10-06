@@ -7,10 +7,10 @@ import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.order.IDistanceTracker;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
 
 public interface IRoutedItem {
 
@@ -56,7 +56,7 @@ public interface IRoutedItem {
   void checkIDFromUUID();
 
   @Nullable
-  ItemStack getItemIdentifierStack();
+  ItemIdentifierStack getItemIdentifierStack();
 
   void readFromNBT(HolderLookup.Provider provider, CompoundTag tag);
 

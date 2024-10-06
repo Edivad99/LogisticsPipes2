@@ -1,6 +1,7 @@
 package logisticspipes.pipes.basic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -11,7 +12,6 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.Configs;
 import logisticspipes.LogisticsPipes;
@@ -30,6 +30,8 @@ import logisticspipes.logisticspipes.ITrackStatistics;
 import logisticspipes.logisticspipes.PipeTransportLayer;
 import logisticspipes.logisticspipes.RouteLayer;
 import logisticspipes.modules.LogisticsModule;
+import logisticspipes.particle.Particles;
+import logisticspipes.particle.PipeFXRenderHandler;
 import logisticspipes.pipes.basic.debug.DebugLogController;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.pipes.upgrades.UpgradeManager;
@@ -39,12 +41,18 @@ import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.SinkReply;
+import logisticspipes.utils.item.ItemIdentifier;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Triplet;
 import lombok.Getter;
-import net.minecraft.client.particle.Particle;
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -87,6 +95,8 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   private boolean destroyByPlayer = false;
   protected int throttleTime = 20;
   private int throttleTimeLeft = 20 + new Random().nextInt(Configs.LOGISTICS_DETECTION_FREQUENCY);
+  private final int[] queuedParticles = new int[Particles.values().length];
+  private boolean hasQueuedParticles = false;
 
   public CoreRoutedPipe(PipeTransportLogistics transport) {
     super(transport);
@@ -99,7 +109,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   @Override
   public final void updateEntity() {
     this.debug.tick();
-    //this.spawnParticleTick();
+    this.spawnParticleTick();
     if (stillNeedReplace) {
       stillNeedReplace = false;
       //first tick just create a router and do nothing.
@@ -110,7 +120,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
       if (this.delayTo < System.currentTimeMillis()) {
         this.delayTo = System.currentTimeMillis() + 200;
         this.repeatFor--;
-        this.getLevel().neighborChanged(getPos(), this.getLevel().getBlockState(getPos()).getBlock(), getPos());
+        this.getLevel().updateNeighborsAt(getPos(), this.getLevel().getBlockState(getPos()).getBlock());
       }
     }
 
@@ -119,9 +129,9 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
       final ItemRoutingInformation polledInfo = this.inTransitToMe.poll();
       if (polledInfo != null) {
         if (LogisticsPipes.isDebug()) {
-          LogisticsPipes.LOG.info("Timed Out: " + polledInfo.getItem().getDisplayName().getString() + " (" + polledInfo.hashCode() + ")");
+          LogisticsPipes.LOG.info("Timed Out: " + polledInfo.getItem().getFriendlyName() + " (" + polledInfo.hashCode() + ")");
         }
-        debug.log("Timed Out: " + polledInfo.getItem().getDisplayName().getString() + " (" + polledInfo.hashCode() + ")");
+        debug.log("Timed Out: " + polledInfo.getItem().getFriendlyName() + " (" + polledInfo.hashCode() + ")");
       }
     }
     //update router before ticking logic/transport
@@ -130,7 +140,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
             || this.initialInit || this.recheckConnections;
     if (doFullRefresh) {
       // update adjacent cache first, so interests can be gathered correctly
-      // in getRouter().update(…) below
+      // in getRouter().update(...) below
       this.updateAdjacentCache();
     }
     this.getRouter().update(doFullRefresh, this);
@@ -206,7 +216,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     // router.startTrackingRoutedItem((RoutedEntityItem) routedItem.getTravelingItem());
 
     //TODO: implement
-    //spawnParticle(Particles.OrangeParticle, 2);
+    this.spawnParticle(Particles.ORANGE_SPARKLE, 2);
     this.stat_lifetime_sent++;
     this.stat_session_sent++;
     this.updateStats();
@@ -246,7 +256,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     if (Configs.LOGISTICS_POWER_USAGE_DISABLED) {
       return;
     }
-   /* if (!isNthTick(10)) {
+    if (!isNthTick(10)) {
       return;
     }
     if (stillNeedReplace || initialInit || router == null) {
@@ -256,8 +266,8 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     if ((flag = canUseEnergy(1)) != textureBufferPowered) {
       textureBufferPowered = flag;
       refreshRender(false);
-      spawnParticle(Particles.RedParticle, 3);
-    }*/
+      spawnParticle(Particles.RED_SPARKLE, 3);
+    }
   }
 
   @Override
@@ -325,14 +335,14 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     return this.debug;
   }
 
-  public void collectSpecificInterests(Collection<Item> itemIdentifiers) {}
+  public void collectSpecificInterests(Collection<ItemIdentifier> itemIdentifiers) {}
 
   public boolean hasGenericInterests() {
     return false;
   }
 
   @Nullable
-  public ItemRoutingInformation getQueuedForItemStack(ItemStack item) {
+  public ItemRoutingInformation getQueuedForItemStack(ItemIdentifierStack item) {
     synchronized (queuedDataForUnroutedItems) {
       Queue<Tuple<Integer, ItemRoutingInformation>> queue = queuedDataForUnroutedItems.get(item.getItem());
       if (queue == null || queue.isEmpty()) {
@@ -342,7 +352,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
       var pair = queue.peek();
       int wantItem = pair.getA();
 
-      if (wantItem <= item.getCount()) {
+      if (wantItem <= item.getStackSize()) {
         if (queue.remove() != pair) {
           LogisticsPipes.LOG.error("Item queue mismatch");
           return null;
@@ -350,7 +360,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
         if (queue.isEmpty()) {
           queuedDataForUnroutedItems.remove(item.getItem());
         }
-        item.setCount(wantItem);
+        item.setStackSize(wantItem);
         return pair.getB();
       }
     }
@@ -386,13 +396,30 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   @Override
-  public void itemCouldNotBeSend(ItemStack item, IAdditionalTargetInformation info) {
+  public void itemCouldNotBeSend(ItemIdentifierStack item, IAdditionalTargetInformation info) {
     if (this instanceof IRequireReliableTransport requireReliableTransport) {
       requireReliableTransport.itemLost(item, info);
     }
   }
 
-  public boolean useEnergy(int i) {
+  /* Power System */
+  @Override
+  public boolean useEnergy(int amount) {
+    return true;
+  }
+
+  @Override
+  public boolean canUseEnergy(int amount) {
+    return canUseEnergy(amount, null);
+  }
+
+  @Override
+  public boolean canUseEnergy(int amount, @Nullable List<Object> providersToIgnore) {
+    return true;
+  }
+
+  @Override
+  public boolean useEnergy(int amount, List<Object> providersToIgnore) {
     return true;
   }
 
@@ -435,26 +462,16 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   public void refreshRender(boolean spawnPart) {
-    this.container.scheduleRenderUpdate();
     if (spawnPart) {
-      //spawnParticle(Particles.GreenParticle, 3);
+      this.spawnParticle(Particles.GREEN_SPARKLE, 3);
     }
   }
 
   public void refreshConnectionAndRender(boolean spawnPart) {
     container.scheduleNeighborChange();
     if (spawnPart) {
-      //spawnParticle(Particles.GreenParticle, 3);
+      this.spawnParticle(Particles.GREEN_SPARKLE, 3);
     }
-  }
-
-  //@Override
-  public void spawnParticle(Particle particle, int amount) {
-    /*if (!Configs.ENABLE_PARTICLE_FX) {
-      return;
-    }
-    queuedParticles[particle.ordinal()] += amount;
-    hasQueuedParticles = true;*/
   }
 
   public UpgradeManager getOriginalUpgradeManager() {
@@ -467,13 +484,11 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   /** Caches adjacent state, only on Side.SERVER */
-  @Nonnull
   private Adjacent adjacent = NoAdjacent.INSTANCE;
 
   /**
    * @return the adjacent cache directly.
    */
-  @Nonnull
   protected Adjacent getAdjacent() {
     return adjacent;
   }
@@ -510,11 +525,27 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   @Override
+  public void triggerConnectionCheck() {
+    this.recheckConnections = true;
+  }
+
+  @Override
   public boolean isSideBlocked(Direction direction, boolean ignoreSystemDisconnection) {
     if (getUpgradeManager().isSideDisconnected(direction)) {
       return true;
     }
     return !stillNeedReplace && getRouter().isSideDisconnected(direction) && !ignoreSystemDisconnection;
+  }
+
+  public void connectionUpdate() {
+    if (container != null && !stillNeedReplace) {
+      if (getLevel().isClientSide) {
+        throw new IllegalStateException("Wont do connectionUpdate on client-side");
+      }
+      container.scheduleNeighborChange();
+      var state = getLevel().getBlockState(getPos());
+      getLevel().updateNeighborsAt(getPos(), state.getBlock());
+    }
   }
 
   @Override
@@ -561,7 +592,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     int count = 0;
     for (ItemRoutingInformation next : this.inTransitToMe) {
       if (next.getItem().getItem().equals(item)) {
-        count += next.getItem().getCount();
+        count += next.getItem().getStackSize();
       }
     }
     return count;
@@ -640,6 +671,50 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     } catch (Exception e) {
       LogisticsPipes.LOG.error("onBlockRemoval", e);
     }
+  }
+
+  @Override
+  public void writeData(FriendlyByteBuf buf) {
+  }
+
+  @Override
+  public void readData(FriendlyByteBuf buf) {
+  }
+
+  @Override
+  public void spawnParticle(Particles particle, int amount) {
+    if (!Configs.ENABLE_PARTICLE_FX) {
+      return;
+    }
+    this.queuedParticles[particle.ordinal()] += amount;
+    this.hasQueuedParticles = true;
+  }
+
+  private void spawnParticleTick() {
+    if (!this.hasQueuedParticles) {
+      return;
+    }
+    if (getLevel() instanceof ServerLevel serverLevel) {
+      for (int i = 0; i < this.queuedParticles.length; i++) {
+        if (this.queuedParticles[i] > 0) {
+          var amount = this.queuedParticles[i];
+          serverLevel.sendParticles(Particles.values()[i].getSparkleFXParticleOptions(amount),
+              getX(), getY(), getZ(), amount, 0, 0, 0, 1);
+        }
+      }
+    } else if (getLevel() instanceof ClientLevel clientLevel) {
+      System.out.println("DEBUG: Added particle client side");
+      if (!Minecraft.getInstance().options.graphicsMode().get().equals(GraphicsStatus.FAST)) {
+        for (int i = 0; i < queuedParticles.length; i++) {
+          if (this.queuedParticles[i] > 0) {
+            PipeFXRenderHandler.spawnGenericParticle(clientLevel, Particles.values()[i],
+                getX(), getY(), getZ(), queuedParticles[i]);
+          }
+        }
+      }
+    }
+    Arrays.fill(this.queuedParticles, 0);
+    this.hasQueuedParticles = false;
   }
 
   public enum ItemSendMode {

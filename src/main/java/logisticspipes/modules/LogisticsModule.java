@@ -1,14 +1,17 @@
 package logisticspipes.modules;
 
+import java.util.Collection;
+import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ILevelProvider;
 import logisticspipes.interfaces.IPipeServiceProvider;
+import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.utils.SinkReply;
+import logisticspipes.utils.item.ItemIdentifier;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
@@ -66,6 +69,15 @@ public abstract class LogisticsModule implements INBTSerializable<CompoundTag> {
     return this.level.getLevel();
   }
 
+  public LogisticsModule getModule() {
+    return this;
+  }
+
+  protected ISlotUpgradeManager getUpgradeManager() {
+    return Objects.requireNonNull(this.service, "service object was null in " + this)
+        .getUpgradeManager(slot, positionInt);
+  }
+
   /**
    * is this module a valid destination for bounced items.
    */
@@ -85,7 +97,7 @@ public abstract class LogisticsModule implements INBTSerializable<CompoundTag> {
    * @return SinkReply whether the module sinks the item or not
    */
   @Nullable
-  public SinkReply sinksItem(ItemStack stack, Item item, int bestPriority,
+  public SinkReply sinksItem(ItemStack stack, ItemIdentifier item, int bestPriority,
       int bestCustomPriority, boolean allowDefault, boolean includeInTransit, boolean forcePassive) {
     return null;
   }
@@ -106,5 +118,22 @@ public abstract class LogisticsModule implements INBTSerializable<CompoundTag> {
     ModulePositionType(boolean inWorld) {
       this.inWorld = inWorld;
     }
+  }
+
+  /**
+   * Is this module interested in all items, or just some specific ones?
+   *
+   * @return true: this module will be checked against every item request
+   * false: only requests involving items collected by {@link #collectSpecificInterests(Collection)} will be checked
+   */
+  public abstract boolean hasGenericInterests();
+
+  /**
+   * Collects the items which this module is capable of providing or supplying
+   * (or is otherwise interested in)
+   *
+   * @param itemIdentifiers the collection to add the interests to
+   */
+  public void collectSpecificInterests(Collection<ItemIdentifier> itemIdentifiers) {
   }
 }

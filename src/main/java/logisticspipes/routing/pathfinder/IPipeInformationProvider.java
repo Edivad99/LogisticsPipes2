@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public interface IPipeInformationProvider {
 
-  boolean isCorrect(ConnectionType connectionType);
+  default boolean isCorrect(ConnectionType connectionType) {
+    return true;
+  }
 
   @Nullable
   Level getLevel();

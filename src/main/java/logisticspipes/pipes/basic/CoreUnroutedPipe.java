@@ -3,7 +3,9 @@ package logisticspipes.pipes.basic;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
+import logisticspipes.Configs;
 import logisticspipes.api.ILPPipe;
+import logisticspipes.interfaces.IClientState;
 import logisticspipes.interfaces.ILevelProvider;
 import logisticspipes.interfaces.IPipeUpgradeManager;
 import logisticspipes.pipes.basic.debug.DebugLogController;
@@ -19,10 +21,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public abstract class CoreUnroutedPipe implements ILPPipe, ILevelProvider {
+public abstract class CoreUnroutedPipe implements ILPPipe, IClientState, ILevelProvider {
 
   @Nullable
   public LogisticsGenericPipeBlockEntity<? extends CoreUnroutedPipe> container;
@@ -37,73 +40,17 @@ public abstract class CoreUnroutedPipe implements ILPPipe, ILevelProvider {
 
   public void setBlockEntity(LogisticsGenericPipeBlockEntity<? extends CoreUnroutedPipe> blockEntity) {
     this.container = blockEntity;
-    this.transport.setTile(blockEntity);
+    this.transport.setBlockEntity(blockEntity);
   }
 
-  public boolean preventRemove() {
-    return false;
+  public void onBlockPlaced() {
+    this.transport.onBlockPlaced();
   }
 
-  @Override
-  public boolean isRoutedPipe() {
-    return false;
-  }
+  public void onBlockPlacedBy(@Nullable LivingEntity placer) {}
 
-  public boolean isFluidPipe() {
-    return false;
-  }
-
-  /**
-   * Called when LogisticsGenericPipeBlockEntity.setRemoved() is called
-   */
-  public void setRemoved() {
-  }
-
-  /**
-   * Called when LogisticsGenericPipeBlockEntity.clearRemoved() is called
-   */
-  public void validate() {
-  }
-
-  /**
-   * Called when LogisticsGenericPipeBlockEntity.onChunkUnloaded() is called
-   */
-  public void onChunkUnload() {
-  }
-
-  @Nullable
-  public Level getLevel() {
-    if (this.container == null) {
-      return null;
-    }
-    return container.getLevel();
-  }
-
-  public BlockPos getPos() {
-    Objects.requireNonNull(this.container, "setBlockEntity must be called before initialize");
-    return this.container.getBlockPos();
-  }
-
-  public final int getX() {
-    return this.getPos().getX();
-  }
-
-  public final int getY() {
-    return this.getPos().getY();
-  }
-
-  public final int getZ() {
-    return this.getPos().getZ();
-  }
-
-  public boolean isMultiBlock() {
-    return false;
-  }
-
-  public void setChanged() {
-    if (this.container != null) {
-      this.container.setChanged();
-    }
+  public void onNeighborBlockChange() {
+    this.transport.onNeighborBlockChange();
   }
 
   public boolean canPipeConnect(BlockEntity blockEntity, Direction side) {
@@ -137,127 +84,54 @@ public abstract class CoreUnroutedPipe implements ILPPipe, ILevelProvider {
     this.initialized = true;
   }
 
-  public DoubleCoordinates getLPPosition() {
-    return new DoubleCoordinates(this);
-  }
-
-  public void addStatusInformation(List<StatusEntry> status) {
-  }
-
-  public IPipeUpgradeManager getUpgradeManager() {
-    return new IPipeUpgradeManager() {
-
-      @Override
-      public boolean hasPowerPassUpgrade() {
-        return false;
-      }
-
-      @Override
-      public boolean hasRFPowerSupplierUpgrade() {
-        return false;
-      }
-
-      @Override
-      public boolean hasBCPowerSupplierUpgrade() {
-        return false;
-      }
-
-      @Override
-      public int getIC2PowerLevel() {
-        return 0;
-      }
-
-      @Override
-      public int getSpeedUpgradeCount() {
-        return 0;
-      }
-
-      @Override
-      public boolean isSideDisconnected(Direction side) {
-        return false;
-      }
-
-      @Override
-      public boolean hasCCRemoteControlUpgrade() {
-        return false;
-      }
-
-      @Override
-      public boolean hasCraftingMonitoringUpgrade() {
-        return false;
-      }
-
-      @Override
-      public boolean isOpaque() {
-        return false;
-      }
-
-      @Override
-      public boolean hasUpgradeModuleUpgrade() {
-        return false;
-      }
-
-      @Override
-      public boolean hasCombinedSneakyUpgrade() {
-        return false;
-      }
-
-      @Override
-      public Direction[] getCombinedSneakyOrientation() {
-        return null;
-      }
-    };
+  public void onBlockRemoval() {
   }
 
   /**
-   * Triggers connection checks for routing.
+   * Called when LogisticsGenericPipeBlockEntity.setRemoved() is called
    */
-  public void triggerConnectionCheck() {
+  public void setRemoved() {
+  }
+
+  /**
+   * Called when LogisticsGenericPipeBlockEntity.clearRemoved() is called
+   */
+  public void validate() {
+  }
+
+  /**
+   * Called when LogisticsGenericPipeBlockEntity.onChunkUnloaded() is called
+   */
+  public void onChunkUnload() {
+  }
+
+  @Nullable
+  public Level getLevel() {
+    if (this.container == null) {
+      return null;
+    }
+    return container.getLevel();
   }
 
   public boolean isSideBlocked(Direction direction, boolean ignoreSystemDisconnection) {
     return false;
   }
 
-  public void triggerDebug() {
-    if (this.debug.debugThisPipe) {
-      System.out.print("");
-    }
+  public final int getX() {
+    return this.getPos().getX();
   }
 
-  public boolean isOpaque() {
-    return false;
+  public final int getY() {
+    return this.getPos().getY();
   }
 
-  @Nullable
-  public DoubleCoordinates getItemRenderPos(float fPos, LPTravelingItem travelItem) {
-    DoubleCoordinates pos = new DoubleCoordinates(0.5, 0.5, 0.5);
-    if (fPos < 0.5) {
-      if (travelItem.input == null) {
-        return null;
-      }
-      if (!container.renderState.pipeConnectionMatrix.isConnected(travelItem.input.getOpposite())) {
-        return null;
-      }
-      CoordinateUtils.add(pos, travelItem.input.getOpposite(), 0.5 - fPos);
-    } else {
-      if (travelItem.output == null) {
-        return null;
-      }
-      if (!container.renderState.pipeConnectionMatrix.isConnected(travelItem.output)) {
-        return null;
-      }
-      CoordinateUtils.add(pos, travelItem.output, fPos - 0.5);
-    }
-    return pos;
+  public final int getZ() {
+    return this.getPos().getZ();
   }
 
-  public void onNeighborBlockChange() {
-    this.transport.onNeighborBlockChange();
-  }
-
-  public void onBlockPlaced() {
-    this.transport.onBlockPlaced();
+  public BlockPos getPos() {
+    Objects.requireNonNull(this.container, "setBlockEntity must be called before initialize");
+    return this.container.getBlockPos();
   }
 
   public boolean canBeDestroyed() {
@@ -268,9 +142,93 @@ public abstract class CoreUnroutedPipe implements ILPPipe, ILevelProvider {
     return false;
   }
 
-  public void onBlockRemoval() {
+  public void setPreventRemove(boolean preventRemove) {
+  }
+
+  public boolean preventRemove() {
+    return false;
+  }
+
+  @Override
+  public boolean isRoutedPipe() {
+    return false;
+  }
+
+  public boolean isFluidPipe() {
+    return false;
+  }
+
+  public void triggerDebug() {
+    if (this.debug.debugThisPipe) {
+      System.out.print("");
+    }
+  }
+
+  public void addStatusInformation(List<StatusEntry> status) {
+  }
+
+  public boolean isOpaque() {
+    return Configs.OPAQUE;
+  }
+
+  public DoubleCoordinates getLPPosition() {
+    return new DoubleCoordinates(this);
+  }
+
+  public IPipeUpgradeManager getUpgradeManager() {
+    return new UnroutedPipeUpgradeManager();
+  }
+
+  public boolean isMultiBlock() {
+    return false;
+  }
+
+
+  public boolean actAsNormalPipe() {
+    return true;
+  }
+
+  @Nullable
+  public DoubleCoordinates getItemRenderPos(float fPos, LPTravelingItem travelItem) {
+    DoubleCoordinates pos = new DoubleCoordinates(0.5, 0.5, 0.5);
+    if (fPos < 0.5) {
+      if (travelItem.input == null) {
+        return null;
+      }
+      if (!container.isPipeConnectedCached(travelItem.input.getOpposite())) {
+        return null;
+      }
+      CoordinateUtils.add(pos, travelItem.input.getOpposite(), 0.5 - fPos);
+    } else {
+      if (travelItem.output == null) {
+        return null;
+      }
+      if (!container.isPipeConnectedCached(travelItem.output)) {
+        return null;
+      }
+      CoordinateUtils.add(pos, travelItem.output, fPos - 0.5);
+    }
+    return pos;
+  }
+
+  public void setChanged() {
+    if (this.container != null) {
+      this.container.setChanged();
+    }
+  }
+
+  /**
+   * Triggers connection checks for routing.
+   */
+  public void triggerConnectionCheck() {
   }
 
   protected void onAllowedRemoval() {
+  }
+
+  /**
+   * Called after reading data from NBT.
+   */
+  public void finishInit() {
   }
 }

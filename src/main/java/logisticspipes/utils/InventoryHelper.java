@@ -3,8 +3,10 @@ package logisticspipes.utils;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.transactor.ITransactor;
+import logisticspipes.utils.transactor.TransactorSimple;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 public class InventoryHelper {
 
@@ -17,14 +19,14 @@ public class InventoryHelper {
       if (t != null) {
         return t;
       }
+
+      var level = blockEntity.getLevel();
+      var pos = blockEntity.getBlockPos();
+      var cap = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, dir);
+      if (cap != null) {
+        return new TransactorSimple(cap);
+      }
     }
-
-    /*if (object instanceof ICapabilityProvider && ((ICapabilityProvider) object).hasCapability
-    (CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, dir)) {
-      return new TransactorSimple(((ICapabilityProvider) object).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, dir));
-    }*/
-
     return null;
-
   }
 }

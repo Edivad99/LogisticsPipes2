@@ -11,11 +11,11 @@ import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.order.IDistanceTracker;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
 
 public class ItemRoutingInformation {
 
@@ -46,7 +46,7 @@ public class ItemRoutingInformation {
   @Getter
   @Setter
   @Nullable
-  private ItemStack item;
+  private ItemIdentifierStack item;
 
   public void readFromNBT(HolderLookup.Provider provider, CompoundTag tag) {
     if (tag.contains("destinationUUID")) {
@@ -55,7 +55,7 @@ public class ItemRoutingInformation {
     arrived = tag.getBoolean("arrived");
     bufferCounter = tag.getInt("bufferCounter");
     _transportMode = IRoutedItem.TransportMode.values()[tag.getInt("transportMode")];
-    this.item = ItemStack.parseOptional(provider, tag.getCompound("Item"));
+    this.item = ItemIdentifierStack.parse(provider, tag.getCompound("Item"));
   }
 
   public void writeToNBT(HolderLookup.Provider provider, CompoundTag tag) {
@@ -65,7 +65,7 @@ public class ItemRoutingInformation {
     tag.putBoolean("arrived", arrived);
     tag.putInt("bufferCounter", bufferCounter);
     tag.putInt("transportMode", _transportMode.ordinal());
-    tag.put("Item", this.item.saveOptional(provider));
+    tag.put("Item", this.item.save(provider));
   }
 
   // the global LP tick in which getTickToTimeOut returns 0.
@@ -109,7 +109,7 @@ public class ItemRoutingInformation {
     that.jamlist = new ArrayList<>(jamlist);
     that.tracker = tracker;
     that.targetInfo = targetInfo;
-    that.item = this.item.copy();
+    that.item = new ItemIdentifierStack(getItem());
     return that;
   }
 

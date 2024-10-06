@@ -16,7 +16,6 @@ public class BasicPipeBlockEntity extends LogisticsGenericPipeBlockEntity<PipeIt
 
   public BasicPipeBlockEntity(BlockPos pos, BlockState blockState) {
     super(LogisticsPipesBlockEntityTypes.PIPE_BASIC.get(), pos, blockState, new PipeItemsBasicLogistics());
-    this.pipe.setBlockEntity(this);
   }
 
   @Override

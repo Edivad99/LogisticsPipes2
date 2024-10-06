@@ -19,6 +19,7 @@ import logisticspipes.utils.CoordinateUtils;
 import logisticspipes.utils.DoubleCoordinates;
 import logisticspipes.utils.EnumFacingUtil;
 import logisticspipes.utils.SlidingWindowBitSet;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +28,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -86,7 +86,7 @@ public abstract class LPTravelingItem {
   }
 
   @Nullable
-  public abstract ItemStack getItemIdentifierStack();
+  public abstract ItemIdentifierStack getItemIdentifierStack();
 
   public boolean isCorrupted() {
     return this.getItemIdentifierStack() == null || this.getItemIdentifierStack().isEmpty();
@@ -108,7 +108,7 @@ public abstract class LPTravelingItem {
   public static final class LPTravelingItemClient extends LPTravelingItem {
 
     @Setter
-    private ItemStack item;
+    private ItemIdentifierStack item;
     private int age;
     private float hoverStart = (float) (Math.random() * Math.PI * 2.0D); //TODO: Useless?
 
@@ -117,13 +117,13 @@ public abstract class LPTravelingItem {
       super(id, position, input, output, yaw);
     }
 
-    public LPTravelingItemClient(int id, ItemStack item) {
+    public LPTravelingItemClient(int id, ItemIdentifierStack item) {
       super(id);
       this.item = item;
     }
 
     @Override
-    public ItemStack getItemIdentifierStack() {
+    public ItemIdentifierStack getItemIdentifierStack() {
       return this.item;
     }
 
@@ -155,7 +155,7 @@ public abstract class LPTravelingItem {
       var copy = new LPTravelingItemClient(id, position, input, output, yaw);
       copy.speed = speed;
       copy.hoverStart = hoverStart;
-      copy.item = item.copy();
+      copy.item = new ItemIdentifierStack(item);
       copy.age = age;
       copy.container = container;
       return copy;
@@ -168,7 +168,7 @@ public abstract class LPTravelingItem {
 
     private ItemRoutingInformation info;
 
-    public LPTravelingItemServer(ItemStack stack) {
+    public LPTravelingItemServer(ItemIdentifierStack stack) {
       super();
       this.info = new ItemRoutingInformation();
       this.info.setItem(stack);
@@ -186,7 +186,7 @@ public abstract class LPTravelingItem {
     }
 
     @Override
-    public ItemStack getItemIdentifierStack() {
+    public ItemIdentifierStack getItemIdentifierStack() {
       return this.info.getItem();
     }
 
@@ -274,8 +274,8 @@ public abstract class LPTravelingItem {
         DoubleCoordinates motion = new DoubleCoordinates(0, 0, 0);
         CoordinateUtils.add(motion, exitdirection, getSpeed() * 2.0);
 
-        var itemEntity = new ItemEntity(level, position.getXCoord(), position.getYCoord(),
-            position.getZCoord(), getItemIdentifierStack());
+        var itemEntity = getItemIdentifierStack()
+            .makeItemEntity(level, position.getXCoord(), position.getYCoord(), position.getZCoord());
 
         //entityitem.lifespan = 1200;
         //entityitem.delayBeforeCanPickup = 10;
@@ -316,7 +316,7 @@ public abstract class LPTravelingItem {
         }
       }
       IRouter destinationRouter = SimpleServiceLocator.routerManager
-          .getRouter(this.container.getLevel(), info.destinationint);
+          .getRouter(/*this.container.getLevel(), */info.destinationint);
       if (destinationRouter != null) {
         var pipe = destinationRouter.getPipe();
         if (pipe != null) {
@@ -342,14 +342,11 @@ public abstract class LPTravelingItem {
     @Override
     public void setDestination(int destination) {
       this.info.destinationint = destination;
-      final Level level = container != null ? container.getLevel() : null;
-      if (!level.isClientSide) {
+      final @Nullable Level level = container != null ? container.getLevel() : null;
+      //TODO: Since we are in the server version, this should be always true
+      if (true || !level.isClientSide) {
         IRouter router = SimpleServiceLocator.routerManager.getServerRouter(destination);
-        if (router != null) {
-          this.info.destinationUUID = router.getId();
-        } else {
-          this.info.destinationUUID = null;
-        }
+        this.info.destinationUUID = router != null ? router.getId() : null;
       } else {
         this.info.destinationUUID = null;
       }
@@ -380,10 +377,10 @@ public abstract class LPTravelingItem {
       /*if (getItemIdentifierStack().getItem().isFluidContainer()) {
         throw new UnsupportedOperationException("Can't split up a FluidContainer");
       }*/
-      ItemStack stackToKeep = this.getItemIdentifierStack();
-      ItemStack stackToSend = stackToKeep.copy();
-      stackToKeep.setCount(itemsToTake);
-      stackToSend.setCount(stackToSend.getCount() - itemsToTake);
+      ItemIdentifierStack stackToKeep = this.getItemIdentifierStack();
+      ItemIdentifierStack stackToSend = new ItemIdentifierStack(stackToKeep);
+      stackToKeep.setStackSize(itemsToTake);
+      stackToSend.setStackSize(stackToSend.getStackSize() - itemsToTake);
 
       this.newId();
 
@@ -437,7 +434,7 @@ public abstract class LPTravelingItem {
     @Override
     public void checkIDFromUUID() {
       IRouter router = SimpleServiceLocator.routerManager
-          .getRouter(this.container.getLevel(), this.info.destinationint);
+          .getRouter(/*this.container.getLevel(), */this.info.destinationint);
       if (router == null || info.destinationUUID != router.getId()) {
         this.info.destinationint = SimpleServiceLocator.routerManager.getIDForUUID(info.destinationUUID);
       }

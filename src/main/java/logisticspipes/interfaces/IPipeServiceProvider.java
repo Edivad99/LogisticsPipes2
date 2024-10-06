@@ -1,6 +1,7 @@
 package logisticspipes.interfaces;
 
 import org.jetbrains.annotations.Nullable;
+import logisticspipes.api.IRoutedPowerProvider;
 import logisticspipes.fromkotlin.Adjacent;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.modules.LogisticsModule;
@@ -10,7 +11,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
 
-public interface IPipeServiceProvider extends ISendRoutedItem {
+public interface IPipeServiceProvider extends IRoutedPowerProvider,
+    ISpawnParticles, ISendRoutedItem {
 
   boolean isNthTick(int n);
 

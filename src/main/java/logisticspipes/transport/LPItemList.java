@@ -58,7 +58,6 @@ public class LPItemList implements Iterable<LPTravelingItem> {
 
   public void scheduleAdd() {
     iterating = true;
-
   }
 
   public void addScheduledItems() {

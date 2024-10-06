@@ -1,5 +1,8 @@
 package logisticspipes.logisticspipes;
 
+import org.jetbrains.annotations.Nullable;
+import logisticspipes.interfaces.IInventoryUtil;
+import logisticspipes.proxy.SimpleServiceLocator;
 import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -23,5 +26,14 @@ public abstract class NeighborBlockEntity<T extends BlockEntity> {
 
   public Direction getOurDirection() {
     return this.direction.getOpposite();
+  }
+
+  public LPNeighborBlockEntitySneakyInsertion<T> sneakyInsertion() {
+    return new LPNeighborBlockEntitySneakyInsertion<>(this.blockEntity, this.direction);
+  }
+
+  @Nullable
+  public IInventoryUtil getInventoryUtil() {
+    return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(blockEntity, getOurDirection());
   }
 }
