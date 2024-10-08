@@ -2,7 +2,6 @@ package logisticspipes.utils;
 
 import java.util.ArrayList;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IInventoryUtil;
@@ -15,7 +14,7 @@ public class InventoryUtilFactory {
 
   private final ArrayList<SpecialInventoryHandler.Factory> handlerFactories = new ArrayList<>();
 
-  public void registerHandler(@Nonnull SpecialInventoryHandler.Factory handlerFactory) {
+  public void registerHandler(SpecialInventoryHandler.Factory handlerFactory) {
     if (handlerFactory.init()) {
       handlerFactories.add(handlerFactory);
       LogisticsPipes.LOG.info("Loaded SpecialInventoryHandler.Factory: {}", handlerFactory.getClass().getCanonicalName());

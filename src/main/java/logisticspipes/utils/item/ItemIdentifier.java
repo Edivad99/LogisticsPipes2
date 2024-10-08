@@ -48,13 +48,17 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier> {
     return this.item.getName(stack).getString();
   }
 
+  public String getFriendlyName() {
+    return this.item.getName(this.makeNormalStack(1)).getString();
+  }
+
   public boolean equalsWithNBT(ItemStack stack) {
     return ItemStack.isSameItemSameComponents(stack, makeNormalStack(stack.getCount()));
   }
 
   @Override
   public String toString() {
-    return this.getFriendlyName(this.makeNormalStack(1));
+    return this.getFriendlyName();
   }
 
   @Override

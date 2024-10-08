@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
 
 public interface IRouter {
 
-  //void destroy();
+  void destroy();
 
   void update(boolean doFullRefresh, CoreRoutedPipe pipe);
 
@@ -26,7 +26,7 @@ public interface IRouter {
 
   boolean isSubPoweredExit(Direction connection);
 
-  //int getDistanceToNextPowerPipe(Direction dir);
+  int getDistanceToNextPowerPipe(Direction dir);
 
   boolean hasRoute(int id, boolean active, ItemIdentifier item);
 
@@ -35,7 +35,7 @@ public interface IRouter {
 
   List<List<ExitRoute>> getRouteTable();
 
-  //List<ExitRoute> getIRoutersByCost()
+  List<ExitRoute> getIRoutersByCost();
 
   @Nullable
   CoreRoutedPipe getPipe();
@@ -78,12 +78,13 @@ public interface IRouter {
   @Nullable
   List<Tuple<ISubSystemPowerProvider, List<IFilter>>> getSubSystemPowerProvider();
 
-  //boolean isCacheInvalid();
+  boolean isCacheInvalid();
 
   //force-update LSA version in the network
-  //void forceLsaUpdate();
+  void forceLsaUpdate();
 
-  //List<ExitRoute> getRoutersOnSide(Direction direction);
+  @Nullable
+  List<ExitRoute> getRoutersOnSide(Direction direction);
 
   //void queueTask(int i, IRouterQueuedTask callable);
 }

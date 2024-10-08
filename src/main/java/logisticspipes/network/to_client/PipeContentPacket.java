@@ -28,12 +28,12 @@ public class PipeContentPacket implements CustomPacketPayload {
 
   public PipeContentPacket(RegistryFriendlyByteBuf buffer) {
     this.stack = ItemIdentifierStack.STREAM_CODEC.decode(buffer);
-    this.travelId = buffer.readInt();
+    this.travelId = buffer.readVarInt();
   }
 
   public void encode(RegistryFriendlyByteBuf buffer) {
     ItemIdentifierStack.STREAM_CODEC.encode(buffer, stack);
-    buffer.writeInt(travelId);
+    buffer.writeVarInt(travelId);
   }
 
   @Override

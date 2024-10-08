@@ -62,6 +62,8 @@ configurations {
     implementation.extendsFrom libraries
 }
 
+minecraft.accessTransformers.file rootProject.file('src/main/resources/META-INF/accesstransformer.cfg')
+
 runs {
   configureEach {
     systemProperty 'forge.logging.console.level', 'debug'
@@ -100,11 +102,15 @@ configurations {
   runtimeClasspath.extendsFrom localRuntime
 }
 
+jarJar.enable()
+
 dependencies {
   implementation group: 'net.neoforged', name: 'neoforge', version: neo_version
 
-  libraries "org.jetbrains.kotlin:kotlin-stdlib:2.0.20"
-  libraries "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  libraries "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinx_coroutines"
+  jarJar(group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version)
+  jarJar(group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: kotlinx_coroutines)
 
   compileOnly "org.projectlombok:lombok:$lombok_version"
   annotationProcessor "org.projectlombok:lombok:$lombok_version"
@@ -113,7 +119,7 @@ dependencies {
   compileOnly "mezz.jei:jei-$minecraft_version-neoforge-api:$jei_version"
   localRuntime "mezz.jei:jei-$minecraft_version-neoforge:$jei_version"
 
-  implementation "curse.maven:mekanism-268560:5680395"
+  localRuntime "curse.maven:mekanism-268560:5680395"
 }
 
 kotlinLombok {

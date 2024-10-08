@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
@@ -19,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.Nullable;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
@@ -47,6 +50,7 @@ import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.level.Level;
 import oshi.util.tuples.Quartet;
@@ -85,6 +89,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   @Getter
   private final int xCoord, yCoord, zCoord;
   // these are maps, not hashMaps because they are unmodifiable Collections to avoid concurrentModification exceptions.
+  @Getter
   private Map<CoreRoutedPipe, ExitRoute> adjacent = new HashMap<>();
   private Map<ServerRouter, ExitRoute> adjacentRouter = new HashMap<>();
   private Map<ServerRouter, ExitRoute> adjacentRouter_Old = new HashMap<>();
@@ -92,10 +97,11 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   private List<Tuple<ILogisticsPowerProvider, List<IFilter>>> powerAdjacent = new ArrayList<>();
   @Nullable
   private List<Tuple<ISubSystemPowerProvider, List<IFilter>>> subSystemPowerAdjacent = new ArrayList<>();
+  @Getter
   private boolean[] sideDisconnected = new boolean[6];
 
   private EnumSet<Direction> routedExits = EnumSet.noneOf(Direction.class);
-  private final Level level;
+  private final ServerLevel level;
   private final ResourceKey<Level> dimension;
   @Nullable
   private WeakReference<CoreRoutedPipe> myPipeCache = null;
@@ -103,7 +109,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   /**
    * Map of router -> orientation for all known destinations
    **/
-  private List<List<ExitRoute>> routeTable = Collections.unmodifiableList(new ArrayList<>());
+  public List<List<ExitRoute>> routeTable = Collections.unmodifiableList(new ArrayList<>());
   private List<ExitRoute> routeCosts = Collections.unmodifiableList(new ArrayList<>());
   private final LinkedList<Tuple<Integer, IRouterQueuedTask>> queue = new LinkedList<>();
   int connectionNeedsChecking;
@@ -114,6 +120,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   int ticksUntilNextInventoryCheck = 0;
 
   private EnumMap<Direction, Integer> subPowerExits = new EnumMap<>(Direction.class);
+  private boolean isDestroyed = false;
   private final ITileEntityChangeListener localChangeListener = new ITileEntityChangeListener() {
 
     @Override
@@ -141,7 +148,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   private Set<LPTileEntityObject> oldTouchedPipes = new HashSet<>();
 
 
-  public ServerRouter(@Nullable UUID globalID, Level level,
+  public ServerRouter(@Nullable UUID globalID, ServerLevel level,
       int xCoord, int yCoord, int zCoord) {
     this.id = globalID != null ? globalID : UUID.randomUUID();
     this.level = level;
@@ -190,8 +197,26 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     return idx;
   }
 
+  private static void releaseSimpleID(int idx) {
+    ServerRouter.simpleIdUsedSet.clear(idx);
+    if (idx < ServerRouter.firstFreeId) {
+      ServerRouter.firstFreeId = idx;
+    }
+  }
+
   private static int getBiggestSimpleID() {
     return ServerRouter.simpleIdUsedSet.size();
+  }
+
+  public static void forEachGlobalSpecificInterest(
+      BiConsumer<ItemIdentifier, NavigableSet<ServerRouter>> consumer) {
+    ServerRouter.globalSpecificInterests.forEach(((itemIdentifier, serverRouters) -> {
+      consumer.accept(itemIdentifier, Collections.unmodifiableNavigableSet(serverRouters));
+    }));
+  }
+
+  public static NavigableSet<ServerRouter> getInterestedInGeneral() {
+    return Collections.unmodifiableNavigableSet(ServerRouter.genericInterests);
   }
 
   @Override
@@ -222,6 +247,11 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @Override
+  public boolean isCacheInvalid() {
+    return this.getPipe() == null;
+  }
+
+  @Override
   public UUID getId() {
     return this.id;
   }
@@ -239,6 +269,12 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   @Override
   public boolean isSideDisconnected(@Nullable Direction dir) {
     return dir != null && this.sideDisconnected[dir.ordinal()];
+  }
+
+  @Override
+  public int hashCode() {
+    // guaranteed to be unique, and uniform distribution over a range.
+    return this.simpleID;
   }
 
   @Override
@@ -511,6 +547,21 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     return adjacentChanged;
   }
 
+  private void updateAdjacentAndLsa() {
+    //this already got a checkAdjacentUpdate, so start the recursion with neighbors
+    BitSet visited = new BitSet(ServerRouter.getBiggestSimpleID());
+    Action flood = new FloodCheckAdjacent();
+    visited.set(simpleID);
+    // for all connected update current and previous
+    for (ServerRouter r : adjacentRouter_Old.keySet()) {
+      r.act(visited, flood);
+    }
+    for (ServerRouter r : adjacentRouter.keySet()) {
+      r.act(visited, flood);
+    }
+    updateLsa();
+  }
+
   void updateLsa() {
     //now increment LSA version in the network
     BitSet visited = new BitSet(ServerRouter.getBiggestSimpleID());
@@ -632,6 +683,25 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     }
   }
 
+  @Override
+  public void destroy() {
+    ServerRouter.SharedLSADatabasewriteLock.lock(); // take a write lock so that we don't overlap with any ongoing route updates
+    if (simpleID < ServerRouter.SharedLSADatabase.length) {
+      ServerRouter.SharedLSADatabase[simpleID] = null;
+    }
+    ServerRouter.SharedLSADatabasewriteLock.unlock();
+    removeAllInterests();
+
+    clearPipeCache();
+    isDestroyed = true;
+    SimpleServiceLocator.routerManager.removeRouter(level, simpleID);
+    for (List<ITileEntityChangeListener> list : listenedPipes) {
+      list.remove(localChangeListener);
+    }
+    updateAdjacentAndLsa();
+    ServerRouter.releaseSimpleID(simpleID);
+  }
+
   private void lazyUpdateRoutingTable() {
     if (LSAVersion > ServerRouter.lastLSAVersion[simpleID]) {
       if (Configs.MULTI_THREAD_NUMBER > 0) {
@@ -650,6 +720,12 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   @Override
+  public List<ExitRoute> getIRoutersByCost() {
+    this.ensureLatestRoutingTable();
+    return this.routeCosts;
+  }
+
+  @Override
   public boolean isRoutedExit(Direction connection) {
     return this.routedExits.contains(connection);
   }
@@ -657,6 +733,11 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   @Override
   public boolean isSubPoweredExit(Direction connection) {
     return this.subPowerExits.containsKey(connection);
+  }
+
+  @Override
+  public int getDistanceToNextPowerPipe(Direction dir) {
+    return this.subPowerExits.get(dir);
   }
 
   @Override
@@ -799,6 +880,19 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   @Override
   public void clearInterests() {
     this.removeAllInterests();
+  }
+
+  @Override
+  public void forceLsaUpdate() {
+    BitSet visited = new BitSet(ServerRouter.getBiggestSimpleID());
+    act(visited, new FlagForLSAUpdate());
+  }
+
+  @Override
+  public List<ExitRoute> getRoutersOnSide(Direction direction) {
+    return this.adjacentRouter.values().stream()
+        .filter(exit -> exit.exitOrientation == direction)
+        .collect(Collectors.toList());
   }
 
   private void checkSecurity(HashMap<CoreRoutedPipe, ExitRoute> adjacent) {
@@ -1181,6 +1275,19 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
   }
 
   /**
+   * Floodfill recheckAdjacent, leave _prevAdjacentRouter around for LSA
+   * updating
+   */
+  static class FloodCheckAdjacent implements Action {
+
+    public boolean isInteresting(ServerRouter router) {
+      return router.checkAdjacentUpdate();
+    }
+
+    public void doTo(ServerRouter router) {}
+  }
+
+  /**
    * Floodfill LSA increment and clean up the _prevAdjacentRouter list left by
    * floodCheckAdjacent
    */
@@ -1208,16 +1315,16 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
   private abstract static class RouterRunnable implements Comparable<RouterRunnable>, Runnable {
 
-    public abstract int getPrority();
+    public abstract int getPriority();
 
     public abstract int localCompare(RouterRunnable o);
 
     @Override
     public int compareTo(RouterRunnable o) {
-      if (o.getPrority() == getPrority()) {
+      if (o.getPriority() == getPriority()) {
         return localCompare(o);
       }
-      return o.getPrority() - getPrority();
+      return o.getPriority() - getPriority();
     }
   }
 
@@ -1259,7 +1366,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     }
 
     @Override
-    public int getPrority() {
+    public int getPriority() {
       return 0;
     }
 
@@ -1306,7 +1413,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
     }
 
     @Override
-    public int getPrority() {
+    public int getPriority() {
       return 1;
     }
 

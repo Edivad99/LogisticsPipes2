@@ -36,8 +36,12 @@ import logisticspipes.pipes.basic.debug.DebugLogController;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.pipes.upgrades.UpgradeManager;
 import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.ItemRoutingInformation;
+import logisticspipes.routing.ServerRouter;
+import logisticspipes.tags.LogisticsPipesTags;
+import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.SinkReply;
@@ -51,9 +55,14 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -92,6 +101,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   @Nullable
   private CacheHolder cacheHolder;
   private boolean recheckConnections = false;
+  private boolean preventRemove = false;
   private boolean destroyByPlayer = false;
   protected int throttleTime = 20;
   private int throttleTimeLeft = 20 + new Random().nextInt(Configs.LOGISTICS_DETECTION_FREQUENCY);
@@ -215,7 +225,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     } // should not be able to send to a non-existing router
     // router.startTrackingRoutedItem((RoutedEntityItem) routedItem.getTravelingItem());
 
-    //TODO: implement
     this.spawnParticle(Particles.ORANGE_SPARKLE, 2);
     this.stat_lifetime_sent++;
     this.stat_session_sent++;
@@ -276,9 +285,45 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   @Override
+  public final boolean blockActivated(Player player) {
+    if (this.container == null) {
+      return super.blockActivated(player);
+    }
+
+    if (player.getMainHandItem().isEmpty()) {
+      if (!player.isCrouching()) {
+        return false;
+      }
+      doDebugStuff(player);
+      return true;
+    }
+
+    if (player instanceof ServerPlayer serverPlayer) {
+      if (player.getMainHandItem().is(LogisticsPipesTags.Items.WRENCH)) {
+        if (container instanceof MenuProvider menuProvider) {
+          serverPlayer.openMenu(menuProvider, container.getBlockPos());
+        }
+      }
+      return true;
+    }
+
+    return super.blockActivated(player);
+  }
+
+  @Override
   public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
     super.saveAdditional(tag, registries);
 
+    synchronized (this.routerIdLock) {
+      if (this.routerId == null || this.routerId.isEmpty()) {
+        if (this.router != null) {
+          this.routerId = router.getId().toString();
+        } else {
+          this.routerId = UUID.randomUUID().toString();
+        }
+      }
+    }
+    tag.putString("routerId", this.routerId);
     tag.putLong("stat_lifetime_sent", this.stat_lifetime_sent);
     tag.putLong("stat_lifetime_received", this.stat_lifetime_received);
     tag.putLong("stat_lifetime_relayed", this.stat_lifetime_relayed);
@@ -286,11 +331,27 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
     if (this.getLogisticsModule() != null) {
       tag.put("module", getLogisticsModule().serializeNBT(registries));
     }
+
+    ListTag sendqueue = new ListTag();
+    for (Triplet<IRoutedItem, Direction, ItemSendMode> p : this.sendQueue) {
+      var tagentry = new CompoundTag();
+      var tagentityitem = new CompoundTag();
+      p.getA().writeToNBT(registries, tagentityitem);
+      tagentry.put("entityitem", tagentityitem);
+      tagentry.putByte("from", (byte) (p.getB().ordinal()));
+      tagentry.putByte("mode", (byte) (p.getC().ordinal()));
+      sendqueue.add(tagentry);
+    }
+    tag.put("sendqueue", sendqueue);
   }
 
   @Override
   public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
     super.loadAdditional(tag, registries);
+
+    synchronized (this.routerIdLock) {
+      this.routerId = tag.getString("routerId");
+    }
 
     this.stat_lifetime_sent = tag.getLong("stat_lifetime_sent");
     this.stat_lifetime_received = tag.getLong("stat_session_received");
@@ -298,6 +359,17 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 
     if (this.getLogisticsModule() != null) {
       getLogisticsModule().deserializeNBT(registries, tag.getCompound("module"));
+    }
+
+    this.sendQueue.clear();
+    var sendqueue = tag.getList("sendqueue", Tag.TAG_COMPOUND);
+    for (int i = 0; i < sendqueue.size(); i++) {
+      var tagentry = sendqueue.getCompound(i);
+      var tagentityitem = tagentry.getCompound("entityitem");
+      var item = new LPTravelingItem.LPTravelingItemServer(registries, tagentityitem);
+      var from = Direction.values()[tagentry.getByte("from")];
+      ItemSendMode mode = ItemSendMode.values()[tagentry.getByte("mode")];
+      this.sendQueue.add(new Triplet<>(item, from, mode));
     }
   }
 
@@ -659,6 +731,16 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   }
 
   @Override
+  public boolean preventRemove() {
+    return this.preventRemove;
+  }
+
+  @Override
+  public void setPreventRemove(boolean preventRemove) {
+    this.preventRemove = preventRemove;
+  }
+
+  @Override
   public void onBlockRemoval() {
     try {
       this.onAllowedRemoval();
@@ -670,6 +752,24 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
       getOriginalUpgradeManager().dropUpgrades();
     } catch (Exception e) {
       LogisticsPipes.LOG.error("onBlockRemoval", e);
+    }
+  }
+
+  @Override
+  public void setRemoved() {
+    super.setRemoved();
+    if (this.router != null) {
+      this.router.destroy();
+      this.router = null;
+    }
+  }
+
+  @Override
+  public void onChunkUnload() {
+    super.onChunkUnload();
+    if (this.router != null) {
+      this.router.clearPipeCache();
+      this.router.clearInterests();
     }
   }
 
@@ -720,5 +820,87 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
   public enum ItemSendMode {
     NORMAL,
     FAST
+  }
+
+  public void doDebugStuff(Player player) {
+    if (!LogisticsPipes.isDebug() || player.level().isClientSide) {
+      return;
+    }
+
+    var sb = new StringBuilder();
+    var router = (ServerRouter) getRouter();
+
+    sb.append("***\n");
+    sb.append("---------Interests---------------\n");
+    ServerRouter.forEachGlobalSpecificInterest((itemIdentifier, serverRouters) -> {
+      sb.append(itemIdentifier.getFriendlyName()).append(":");
+      for (IRouter j : serverRouters) {
+        sb.append(j.getSimpleID()).append(",");
+      }
+      sb.append('\n');
+    });
+
+    sb.append("ALL ITEMS:");
+    for (IRouter j : ServerRouter.getInterestedInGeneral()) {
+      sb.append(j.getSimpleID()).append(",");
+    }
+    sb.append('\n');
+
+    sb.append(router).append('\n');
+    sb.append("---------CONNECTED TO---------------\n");
+    for (CoreRoutedPipe adj : router.getAdjacent().keySet()) {
+      sb.append(adj.getRouter().getSimpleID()).append('\n');
+    }
+    sb.append('\n');
+
+    sb.append("========DISTANCE TABLE==============\n");
+    for (ExitRoute n : router.getIRoutersByCost()) {
+      sb.append(n.destination.getSimpleID())
+          .append(" @ ")
+          .append(n.distanceToDestination)
+          .append(" -> ")
+          .append(n.connectionDetails)
+          .append("(")
+          .append(n.destination.getId())
+          .append(")")
+          .append('\n');
+    }
+    sb.append('\n');
+
+    sb.append("*******EXIT ROUTE TABLE*************\n");
+    List<List<ExitRoute>> table = router.getRouteTable();
+    for (int i = 0; i < table.size(); i++) {
+      if (table.get(i) != null) {
+        if (!table.get(i).isEmpty()) {
+          sb.append("%d -> %d\n".formatted(i, table.get(i).getFirst().destination.getSimpleID()));
+          for (ExitRoute route : table.get(i)) {
+            sb.append("\t\t via %s(%s distance)\n".formatted(route.exitOrientation, route.distanceToDestination));
+          }
+        }
+      }
+    }
+    sb.append('\n');
+
+    sb.append("++++++++++CONNECTIONS+++++++++++++++\n");
+    sb.append(Arrays.toString(Direction.values())).append('\n');
+    sb.append(Arrays.toString(router.getSideDisconnected())).append('\n');
+    if (container != null) {
+      sb.append(Arrays.toString(container.pipeConnectionsBuffer)).append('\n');
+    }
+    sb.append("+++++++++++++ADJACENT+++++++++++++++\n");
+    sb.append(adjacent).append('\n');
+    sb.append("pointing: ").append(getPointedOrientation()).append('\n');
+    sb.append("~~~~~~~~~~~~~~~POWER~~~~~~~~~~~~~~~~\n");
+    sb.append(router.getPowerProvider()).append('\n');
+    sb.append("~~~~~~~~~~~SUBSYSTEMPOWER~~~~~~~~~~~\n");
+    sb.append(router.getSubSystemPowerProvider()).append('\n');
+    /*if (orderItemManager != null) {
+      sb.append("################ORDERDUMP#################\n");
+      orderItemManager.dump(sb);
+    }
+    sb.append("################END#################\n");*/
+    refreshConnectionAndRender(true);
+    System.out.print(sb);
+    router.CreateRouteTable(Integer.MAX_VALUE);
   }
 }

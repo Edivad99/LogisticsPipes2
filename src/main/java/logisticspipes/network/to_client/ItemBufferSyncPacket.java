@@ -48,8 +48,8 @@ public class ItemBufferSyncPacket extends ListSyncPacket<Triplet<ItemIdentifierS
   }
 
   public static void handle(ItemBufferSyncPacket message, IPayloadContext context) {
-    LogisticsGenericPipeBlockEntity<?> pipe = message.getPipe(context.player().level());
-    pipe.pipe.getTransport().itemBuffer.clear();
-    pipe.pipe.getTransport().itemBuffer.addAll(message.getList());
+    LogisticsGenericPipeBlockEntity<?> blockEntity = message.getPipe(context.player().level());
+    blockEntity.pipe.getTransport().itemBuffer.clear();
+    blockEntity.pipe.getTransport().itemBuffer.addAll(message.getList());
   }
 }

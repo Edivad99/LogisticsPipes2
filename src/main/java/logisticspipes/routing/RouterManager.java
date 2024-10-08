@@ -14,7 +14,9 @@ import org.jetbrains.annotations.Nullable;
 import logisticspipes.interfaces.routing.IChannelConnectionManager;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.routing.channels.ChannelConnection;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.loading.FMLEnvironment;
 
@@ -59,6 +61,10 @@ public class RouterManager implements IChannelConnectionManager {
   public void removeRouter(Level level, int id) {
     //TODO: isClient without a world is expensive
     if (!level.isClientSide) {
+      if (this.routersServer.isEmpty()) {
+        // In 1.21.1+ no ops, if this method is called after serverStopClean
+        return;
+      }
       this.routersServer.set(id, null);
     }
   }
@@ -172,14 +178,14 @@ public class RouterManager implements IChannelConnectionManager {
     if (id > 0) {
       getRouter(/*level, */id); //TODO: Why?
     }
-    if (level.isClientSide) {
+    if (level instanceof ClientLevel clientLevel) {
       synchronized (this.routersClient) {
         for (IRouter r2 : this.routersClient) {
           if (r2.isAt(level.dimension(), x, y, z)) {
             return r2;
           }
         }
-        r = new ClientRouter(identifier, level, x, y, z);
+        r = new ClientRouter(identifier, clientLevel, x, y, z);
         this.routersClient.add(r);
       }
     } else {
@@ -189,7 +195,7 @@ public class RouterManager implements IChannelConnectionManager {
             return r2;
           }
         }
-        final var serverRouter = new ServerRouter(identifier, level, x, y, z);
+        final var serverRouter = new ServerRouter(identifier, (ServerLevel) level, x, y, z);
         int rId = serverRouter.getSimpleID();
         if (this.routersServer.size() <= rId) {
           this.routersServer.ensureCapacity(rId + 1);

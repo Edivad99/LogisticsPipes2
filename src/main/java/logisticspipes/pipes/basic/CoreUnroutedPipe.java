@@ -22,6 +22,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -41,6 +42,10 @@ public abstract class CoreUnroutedPipe implements ILPPipe, IClientState, ILevelP
   public void setBlockEntity(LogisticsGenericPipeBlockEntity<? extends CoreUnroutedPipe> blockEntity) {
     this.container = blockEntity;
     this.transport.setBlockEntity(blockEntity);
+  }
+
+  public boolean blockActivated(Player player) {
+    return false;
   }
 
   public void onBlockPlaced() {

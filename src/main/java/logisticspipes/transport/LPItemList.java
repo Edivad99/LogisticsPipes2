@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
@@ -38,6 +38,7 @@ public class LPItemList implements Iterable<LPTravelingItem> {
     collection.forEach(this::add);
   }
 
+  @Nullable
   public LPTravelingItem get(int id) {
     return items.get(id);
   }
@@ -101,7 +102,6 @@ public class LPItemList implements Iterable<LPTravelingItem> {
     purgeBadItems();
   }
 
-  @Nonnull
   @Override
   public Iterator<LPTravelingItem> iterator() {
     return items.values().iterator();

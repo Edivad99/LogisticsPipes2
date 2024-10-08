@@ -1,5 +1,6 @@
 package logisticspipes.client.renderer.blockentity;
 
+import org.jetbrains.annotations.Nullable;
 import com.mojang.blaze3d.vertex.PoseStack;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
@@ -12,8 +13,11 @@ import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -21,6 +25,7 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
 
   final static private int LIQUID_STAGES = 40;
   final static private int MAX_ITEMS_TO_RENDER = 10;
+  private final LazyItemRenderer itemRenderer = new LazyItemRenderer();
   /*private final ItemEntity dummyEntityItem = new ItemEntity(null, null);
   private final ItemRenderer customRenderItem;
 
@@ -46,6 +51,7 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
   @Override
   public void render(LogisticsGenericPipeBlockEntity<?> blockEntity, float partialTick,
       PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    itemRenderer.init(blockEntity.getLevel(), blockEntity.getBlockPos());
     CoreUnroutedPipe pipe = blockEntity.pipe;
     if(!pipe.isOpaque()) {
       /*if(pipe.getTransport() instanceof PipeFluidTransportLogistics) {
@@ -70,9 +76,6 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
 
     poseStack.pushPose();
 
-    //TODO:CHECK
-    int light = packedLight; //level.getLightEmission(blockEntity.getBlockPos());
-
     int count = 0;
     for(LPTravelingItem item: pipe.getTransport().items) {
       CoreUnroutedPipe lPipe = pipe;
@@ -92,7 +95,8 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
         continue;
       }
 
-      float fPos = item.getPosition() + item.getSpeed() * partialTickTime;
+      //TODO: Investigate this
+      float fPos = item.getPosition();// + item.getSpeed() * partialTickTime;
       if (fPos > lPipe.getTransport().getPipeLength() && item.output != null) {
         CoreUnroutedPipe nPipe = lPipe.getTransport().getNextPipe(item.output);
         if (nPipe != null) {
@@ -116,9 +120,8 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
       double itemYawForPitch = lPipe.getItemRenderYaw(fPos, item);*/
 
       ItemIdentifierStack stack = item.getItemIdentifierStack();
-      doRenderItem(poseStack, bufferSource, level, stack.makeNormalStack(),
-          pos.getXCoord(), pos.getYCoord(), pos.getZCoord(),
-          light, packedOverlay, 0.75F);
+      doRenderItem(poseStack, bufferSource, stack.makeNormalStack(),
+          pos.getXCoord(), pos.getYCoord(), pos.getZCoord(), packedLight, 0.7F);
       count++;
     }
 
@@ -132,10 +135,9 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
       if(item == null || item.getA() == null) {
         continue;
       }
-      ItemIdentifierStack itemstack = item.getA();
-      doRenderItem(poseStack, bufferSource, level, itemstack.makeNormalStack(),
+      doRenderItem(poseStack, bufferSource, item.getA().makeNormalStack(),
           x + pos.getXDouble(), y + pos.getYDouble(), z + pos.getZDouble(),
-          light, packedOverlay, 0.25F);
+          packedLight, 0.25F);
       count++;
       if(count >= 27) {
         break;
@@ -153,15 +155,43 @@ public class LogisticsRenderPipe implements BlockEntityRenderer<LogisticsGeneric
     poseStack.popPose();
   }
 
-  public void doRenderItem(PoseStack poseStack, MultiBufferSource bufferSource, Level level,
-      ItemStack itemstack, double x, double y, double z,
-      int light, int packedOverlay, float renderScale) {
+  public void doRenderItem(PoseStack poseStack, MultiBufferSource bufferSource,
+      ItemStack itemstack, double x, double y, double z, int packedLight, float renderScale) {
     poseStack.pushPose();
     poseStack.translate(x, y, z);
     poseStack.scale(renderScale, renderScale, renderScale);
-    Minecraft.getInstance().getItemRenderer().renderStatic(
-        itemstack, ItemDisplayContext.GROUND, light, packedOverlay, poseStack, bufferSource,
-        level, 0);
+    poseStack.translate(0, -0.25F, 0);
+    itemRenderer.renderAsStack(poseStack, bufferSource, itemstack, packedLight);
     poseStack.popPose();
+  }
+
+  private static class LazyItemRenderer {
+
+    @Nullable
+    private ItemEntity entityItem;
+    @Nullable
+    private EntityRenderer<? super ItemEntity> renderer;
+
+    public void init(Level level, BlockPos pos) {
+      if (entityItem == null) {
+        entityItem = new ItemEntity(EntityType.ITEM, level);
+      } else {
+        entityItem.setLevel(level);
+      }
+      entityItem.setPos(0, 0, 0);
+      entityItem.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+      //Reset entity age to fix issues with mods like ItemPhysic
+      entityItem.age = 0;
+    }
+
+    private void renderAsStack(PoseStack matrix, MultiBufferSource buffer, ItemStack stack, int light) {
+      if (entityItem != null) {
+        if (renderer == null) {
+          renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entityItem);
+        }
+        entityItem.setItem(stack);
+        renderer.render(entityItem, 0, 0, matrix, buffer, light);
+      }
+    }
   }
 }

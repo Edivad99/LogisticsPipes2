@@ -2,7 +2,6 @@ package logisticspipes.routing;
 
 import java.util.EnumSet;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import lombok.Getter;
 import net.minecraft.core.Direction;
@@ -49,7 +48,7 @@ public class LaserData {
     return this;
   }
 
-  public LaserData setConnectionType(@Nonnull EnumSet<PipeRoutingConnectionType> connectionType) {
+  public LaserData setConnectionType(EnumSet<PipeRoutingConnectionType> connectionType) {
     this.connectionType = connectionType;
     return this;
   }

@@ -14,6 +14,7 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.interfaces.IBufferItems;
 import logisticspipes.interfaces.IInventoryUtil;
+import logisticspipes.interfaces.IItemAdvancedExistence;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.ISpecialInsertion;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
@@ -157,8 +158,13 @@ public class PipeTransportLogistics {
     for (int i = 0; i < tagsList1.size(); i++) {
       var dataTag = tagsList1.getCompound(i);
       var item = new LPTravelingItem.LPTravelingItemServer(registries, dataTag);
-      this.items.add(item);
+      if (item.isCorrupted()) {
+        continue;
+      }
+      this.items.scheduleLoad(item);
     }
+
+    this.itemBuffer.clear();
 
     var tagList2 = tag.getList("buffercontents", Tag.TAG_COMPOUND);
     for (int i = 0; i < tagList2.size(); i++) {
@@ -281,7 +287,7 @@ public class PipeTransportLogistics {
     return this.injectItem((LPTravelingItem) item, inputOrientation);
   }
 
-    public int injectItem(LPTravelingItem item, @Nullable Direction inputOrientation) {
+  public int injectItem(LPTravelingItem item, @Nullable Direction inputOrientation) {
     if(item.isCorrupted()) {
       // Safe guard - if for any reason the item is corrupted at this
       // stage, avoid adding it to the pipe to avoid further exceptions.
@@ -302,7 +308,7 @@ public class PipeTransportLogistics {
       if (!result.hasRoute) {
         return 0;
       }
-      getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + info1);
+      //getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + info1);
     } else {
       item.output = null;
     }
@@ -326,10 +332,18 @@ public class PipeTransportLogistics {
   protected void reachedEnd(LPTravelingItem item) {
     var blockEntity = container.getBlockEntity(item.output);
     if (items.scheduleRemoval(item)) {
-      if (!container.getLevel().isClientSide) {
-        handleTileReachedServer((LPTravelingItem.LPTravelingItemServer) item, blockEntity, item.output);
+      if (container.getLevel().isClientSide) {
+        if (item instanceof LPTravelingItem.LPTravelingItemClient itemClient) {
+          handleTileReachedClient(itemClient, blockEntity, item.output);
+        } else {
+          LogisticsPipes.LOG.error("Tried to handle a server item as client item");
+        }
       } else {
-        handleTileReachedClient((LPTravelingItem.LPTravelingItemClient) item, blockEntity, item.output);
+        if (item instanceof LPTravelingItem.LPTravelingItemServer itemServer) {
+          handleTileReachedServer(itemServer, blockEntity, item.output);
+        } else {
+          LogisticsPipes.LOG.error("Tried to handle a client item as server item");
+        }
       }
     }
   }
@@ -346,7 +360,7 @@ public class PipeTransportLogistics {
     IPipeInformationProvider information = SimpleServiceLocator.pipeInformationManager.getInformationProviderFor(blockEntity);
     if (information != null) {
       item.setPosition(item.getPosition() - getPipeLength());
-      item.setYaw(item.getYaw() + (getYawDiff(item)));
+      item.setYaw(item.getYaw() + getYawDiff(item));
       return information.acceptItem(item, container);
     }
     return false;
@@ -553,16 +567,16 @@ public class PipeTransportLogistics {
     }
   }
 
-  public void markChunkModified(@Nullable BlockEntity tile) {
-    if (tile != null && chunk != null) {
+  public void markChunkModified(@Nullable BlockEntity blockEntity) {
+    if (blockEntity != null && chunk != null) {
       // items are crossing a chunk boundary, mark both chunks modified
       var containerPos = container.getBlockPos();
-      var tilePos = tile.getBlockPos();
+      var tilePos = blockEntity.getBlockPos();
       if (containerPos.getX() >> 4 != tilePos.getX() >> 4 || containerPos.getZ() >> 4 != tilePos.getZ() >> 4) {
         chunk.setUnsaved(true);
-        if (tile instanceof LogisticsGenericPipeBlockEntity<?> genericPipeBlockEntity
-            && genericPipeBlockEntity.pipe.getTransport().chunk != null) {
-          genericPipeBlockEntity.pipe.getTransport().chunk.setUnsaved(true);
+        if (blockEntity instanceof LogisticsGenericPipeBlockEntity<?> pipeBlockEntity
+            && pipeBlockEntity.pipe.getTransport().chunk != null) {
+          pipeBlockEntity.pipe.getTransport().chunk.setUnsaved(true);
         } else {
           this.getLevel().getChunk(tilePos).setUnsaved(true);
         }
@@ -676,10 +690,10 @@ public class PipeTransportLogistics {
   }
 
   protected boolean isItemUnwanted(@Nullable ItemIdentifierStack itemIdentifierStack) {
-    /*if (itemIdentifierStack != null &&
-        itemIdentifierStack.getItem() instanceof IItemAdvancedExistance itemAdvancedExistance) {
-      return !itemAdvancedExistance.canExistInNormalInventory(itemIdentifierStack.makeNormalStack());
-    }*/
+    if (itemIdentifierStack != null &&
+        itemIdentifierStack.makeNormalStack().getItem() instanceof IItemAdvancedExistence itemAdvancedExistence) {
+      return !itemAdvancedExistence.canExistInNormalInventory(itemIdentifierStack.makeNormalStack());
+    }
     return false;
   }
 
@@ -697,7 +711,8 @@ public class PipeTransportLogistics {
     PacketDistributor.sendToPlayersTrackingChunk((ServerLevel) container.getLevel(),
         new ChunkPos(container.getBlockPos()),
         new PipePositionPacket(container.getBlockPos(),
-            item.getId(), item.getSpeed(), item.getPosition(), item.input, item.output, item.getYaw()));
+            item.getId(), item.getSpeed(), item.getPosition(),
+            item.input, item.output, item.getYaw()));
     /*if (MainProxy.isAnyoneWatching(container.getPos(), getWorld().provider.getDimension())) {
       if (!LPTravelingItem.clientSideKnownIDs.get(item.getId())) {
         MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId())));
@@ -707,8 +722,8 @@ public class PipeTransportLogistics {
     }*/
   }
 
-  public void handleItemPositionPacket(int travelId, Direction input, Direction output,
-      float speed, float position, float yaw) {
+  public void handleItemPositionPacket(int travelId, @Nullable Direction input,
+      @Nullable Direction output, float speed, float position, float yaw) {
     var ref = LPTravelingItem.CLIENT_LIST.get(travelId);
     LPTravelingItem.LPTravelingItemClient item = null;
     if (ref != null) {
@@ -721,7 +736,6 @@ public class PipeTransportLogistics {
       LPTravelingItem.CLIENT_LIST.put(travelId, new WeakReference<>(item));
     } else {
       if (item.getContainer() instanceof LogisticsGenericPipeBlockEntity<?> pipeBlockEntity) {
-        pipeBlockEntity.pipe.getTransport().items.scheduleRemoval(item);
         pipeBlockEntity.pipe.getTransport().items.scheduleRemoval(item);
         pipeBlockEntity.pipe.getTransport().items.removeScheduledItems();
       }

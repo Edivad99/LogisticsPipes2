@@ -32,6 +32,7 @@ public enum Particles {
   }
 
   public SparkleParticleOptions getSparkleFXParticleOptions(int amount) {
+    //LogisticsPipes.LOG.info(this.name());
     return new SparkleParticleOptions(red, green, blue, amount);
   }
 }

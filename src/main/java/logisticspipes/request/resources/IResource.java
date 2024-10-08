@@ -1,6 +1,5 @@
 package logisticspipes.request.resources;
 
-import javax.annotation.Nonnull;
 import logisticspipes.routing.IRouter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -14,7 +13,6 @@ public interface IResource {
 
   int getRequestedAmount();
 
-  @Nonnull
   IRouter getRouter();
 
   boolean matches(IResource resource, MatchSettings settings);

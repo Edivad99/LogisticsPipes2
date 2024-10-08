@@ -71,7 +71,7 @@ public abstract class LPTravelingItem {
   public LPTravelingItem(int id, float position,
       @Nullable Direction input, @Nullable Direction output, float yaw) {
     this.id = id;
-    this.position = position;
+    this.setPosition(position);
     this.input = input;
     this.output = output;
     this.yaw = yaw;
@@ -127,11 +127,12 @@ public abstract class LPTravelingItem {
       return this.item;
     }
 
-    public void updateInformation(Direction input, Direction output, float speed, float position, float yaw) {
+    public void updateInformation(@Nullable Direction input, @Nullable Direction output,
+        float speed, float position, float yaw) {
       this.input = input;
       this.output = output;
       this.speed = speed;
-      this.position = position;
+      this.setPosition(position);
       this.yaw = yaw;
     }
 

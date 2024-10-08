@@ -1,6 +1,6 @@
 package logisticspipes.pipes;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import logisticspipes.fromkotlin.Adjacent;
 import logisticspipes.fromkotlin.NoAdjacent;
 import logisticspipes.fromkotlin.SingleAdjacent;

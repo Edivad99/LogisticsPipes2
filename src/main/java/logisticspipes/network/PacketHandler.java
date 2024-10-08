@@ -11,6 +11,7 @@ import logisticspipes.network.to_server.SetDefaultRouteItemSinkMessage;
 import logisticspipes.network.to_server.UpdateModuleItemSinkMessage;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.HandlerThread;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class PacketHandler {
@@ -20,8 +21,12 @@ public final class PacketHandler {
   public static void register(IEventBus modEventBus) {
     modEventBus.addListener(RegisterPayloadHandlersEvent.class, event -> {
       var registrar = event.registrar(LogisticsPipes.ID).versioned("1");
+      var registrarNetwork = registrar.executesOn(HandlerThread.NETWORK);
       registerClientToServer(registrar);
       registerServerToClient(registrar);
+
+      registerClientToServerNetwork(registrarNetwork);
+      registerServerToClientNetwork(registrarNetwork);
     });
   }
 
@@ -32,8 +37,6 @@ public final class PacketHandler {
         SetDefaultRouteItemSinkMessage.STREAM_CODEC, SetDefaultRouteItemSinkMessage::handle);
     registrar.playToServer(UpdateModuleItemSinkMessage.TYPE,
         UpdateModuleItemSinkMessage.STREAM_CODEC, UpdateModuleItemSinkMessage::handle);
-    registrar.playToServer(PipeContentRequest.TYPE,
-        PipeContentRequest.STREAM_CODEC, PipeContentRequest::handle);
   }
 
   private static void registerServerToClient(PayloadRegistrar registrar) {
@@ -41,9 +44,17 @@ public final class PacketHandler {
         ItemBufferSyncPacket.STREAM_CODEC, ItemBufferSyncPacket::handle);
     registrar.playToClient(PipeBlockEntityStatePacket.TYPE,
         PipeBlockEntityStatePacket.STREAM_CODEC, PipeBlockEntityStatePacket::handle);
-    registrar.playToClient(PipeContentPacket.TYPE,
-        PipeContentPacket.STREAM_CODEC, PipeContentPacket::handle);
     registrar.playToClient(PipePositionPacket.TYPE,
         PipePositionPacket.STREAM_CODEC, PipePositionPacket::handle);
+  }
+
+  private static void registerClientToServerNetwork(PayloadRegistrar registrar) {
+    registrar.playToServer(PipeContentRequest.TYPE,
+        PipeContentRequest.STREAM_CODEC, PipeContentRequest::handle);
+  }
+
+  private static void registerServerToClientNetwork(PayloadRegistrar registrar) {
+    registrar.playToClient(PipeContentPacket.TYPE,
+        PipeContentPacket.STREAM_CODEC, PipeContentPacket::handle);
   }
 }

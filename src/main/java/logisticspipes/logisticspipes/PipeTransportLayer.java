@@ -1,7 +1,7 @@
 package logisticspipes.logisticspipes;
 
 import java.util.LinkedList;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import logisticspipes.fromkotlin.WorldCoordinatesWrapper;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.routing.IRouter;

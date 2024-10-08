@@ -36,7 +36,7 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
 
   public static PipeInventoryConnectionChecker pipeInventoryConnectionChecker = new PipeInventoryConnectionChecker();
 
-  public T pipe;
+  public final T pipe;
   public int statePacketId = 0;
   @Getter
   private final LogisticsTileRenderController<T> renderController;
@@ -116,17 +116,13 @@ public abstract class LogisticsGenericPipeBlockEntity<T extends CoreUnroutedPipe
     this.initialized = false;
     this.tileBuffer = null;
     this.bindPipe();
-    if (this.pipe != null) {
-      this.pipe.validate();
-    }
+    this.pipe.validate();
   }
 
   @Override
   public void onChunkUnloaded() {
     super.onChunkUnloaded();
-    if (this.pipe != null) {
-      this.pipe.onChunkUnload();
-    }
+    this.pipe.onChunkUnload();
   }
 
   @Nullable

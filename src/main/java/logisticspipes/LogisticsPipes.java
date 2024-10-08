@@ -18,6 +18,8 @@ import logisticspipes.routing.RouterManager;
 import logisticspipes.routing.ServerRouter;
 import logisticspipes.routing.pathfinder.PipeInformationManager;
 import logisticspipes.ticks.LPTickHandler;
+import logisticspipes.ticks.QueuedTasks;
+import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.utils.InventoryUtilFactory;
 import logisticspipes.utils.RoutedItemHelper;
 import logisticspipes.world.inventory.LogisticsPipesMenuTypes;
@@ -51,6 +53,10 @@ public class LogisticsPipes {
   public LogisticsPipes(ModContainer modContainer, Dist dist) {
     NeoForge.EVENT_BUS.register(this);
     NeoForge.EVENT_BUS.register(new LPTickHandler());
+    NeoForge.EVENT_BUS.register(new QueuedTasks());
+    for (int i = 0; i < Configs.MULTI_THREAD_NUMBER; i++) {
+      new RoutingTableUpdateThread(i);
+    }
 
     var modEventBus = modContainer.getEventBus();
     modEventBus.addListener(this::handleRegisterCapabilities);
@@ -110,6 +116,7 @@ public class LogisticsPipes {
   @SubscribeEvent
   public void handleServerStopping(ServerStoppingEvent event) {
     SimpleServiceLocator.routerManager.serverStopClean();
+    QueuedTasks.clearAllTasks();
     ServerRouter.cleanup();
     ServerTickDispatcher.INSTANCE.cleanup();
   }

@@ -1,6 +1,7 @@
 package logisticspipes.routing;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.DoubleCoordinates;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.world.level.block.entity.LogisticsGenericPipeBlockEntity;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
@@ -20,10 +22,10 @@ import net.minecraft.world.level.Level;
 
 public class ClientRouter implements IRouter {
 
-  private final Level level;
+  private final ClientLevel level;
   private final int xCoord, yCoord, zCoord;
 
-  public ClientRouter(@Nullable UUID identifier, Level level,
+  public ClientRouter(@Nullable UUID identifier, ClientLevel level,
       int x, int y, int z) {
     this.level = level;
     this.xCoord = x;
@@ -113,7 +115,24 @@ public class ClientRouter implements IRouter {
   }
 
   @Override
+  public List<ExitRoute> getIRoutersByCost() {
+    if (LogisticsPipes.isDebug()) {
+      throw new UnsupportedOperationException("noClientRouting");
+    }
+    return new LinkedList<>();
+  }
+
+  @Override
   public void clearInterests() {
+  }
+
+  @Override
+  public boolean isCacheInvalid() {
+    return false;
+  }
+
+  @Override
+  public void forceLsaUpdate() {
   }
 
   @Override
@@ -143,5 +162,19 @@ public class ClientRouter implements IRouter {
   @Override
   public boolean isSubPoweredExit(Direction connection) {
     return false;
+  }
+
+  @Override
+  public void destroy() {
+  }
+
+  @Override
+  public List<ExitRoute> getRoutersOnSide(Direction direction) {
+    return null;
+  }
+
+  @Override
+  public int getDistanceToNextPowerPipe(Direction dir) {
+    return 0;
   }
 }
