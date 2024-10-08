@@ -58,7 +58,7 @@ public class SparkParticle extends TextureSheetParticle {
 
   @Override
   public ParticleRenderType getRenderType() {
-    return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    return SparkParticleRenderType.SPARK_PARTICLE_RENDER_TYPE;
   }
 
   public static class Provider implements ParticleProvider<SparkleParticleOptions> {
